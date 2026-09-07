@@ -6,7 +6,7 @@ Pionex 合約(PERP)型態訊號監控 + Telegram 通知
 機器人(TELEGRAM_BOT_TOKEN_2 / TELEGRAM_CHAT_ID_2)發送通知。資產排除邏輯跟
 第一支程式一樣。
 
-只偵測 4 小時 / 日線 兩個週期(不含 15 分鐘 / 1 小時)。每次執行時直接問
+只偵測 1 小時 / 4 小時 / 日線 三個週期(不含 15 分鐘)。每次執行時直接問
 Pionex「這三個週期各自最新收盤的那一根,是不是比上次記錄的更新」,只有真的
 有新的一根收盤,才會針對該週期重新判斷型態,不會因為排程延遲而漏掉或重複。
 
@@ -50,7 +50,7 @@ CONFIG_FILE = os.path.join(os.path.dirname(__file__), "pattern_config.json")
 TAIPEI_TZ = timezone(timedelta(hours=8))
 
 # 這支程式偵測的週期,固定為這三個(不含 15M)
-DETECT_INTERVALS = ["4H", "1D"]
+DETECT_INTERVALS = ["60M", "4H", "1D"]
 
 DEFAULT_CONFIG = {
     "min_24h_amount_usdt": 20000,        # 共用:24 小時成交金額(USDT)門檻
@@ -97,6 +97,7 @@ INTERVAL_MS = {
 }
 
 INTERVAL_LABELS = {
+    "60M": {"full": "1小時級別", "short": "1h"},
     "4H": {"full": "4小時級別", "short": "4h"},
     "1D": {"full": "日線級別", "short": "1d"},
 }
@@ -428,6 +429,7 @@ def get_latest_closed_candle_time(session, symbol, interval, now_ms):
 
 
 STATE_BOUNDARY_KEYS = {
+    "60M": "last_60m_boundary_ms",
     "4H": "last_4h_boundary_ms",
     "1D": "last_1d_boundary_ms",
 }
@@ -450,7 +452,7 @@ def main():
     state = load_json(STATE_FILE, {})
     session = requests.Session()
 
-    # 分別問 4H / 1D 各自「最新收盤那一根」是不是比上次記錄的更新,
+    # 分別問 1H / 4H / 1D 各自「最新收盤那一根」是不是比上次記錄的更新,
     # 只有真的有新一根收盤,才把該週期加入這次要偵測的清單
     intervals = []
     latest_boundary_times = {}
@@ -555,7 +557,7 @@ def main():
 
     lines = [
         f"📐 Pionex 型態訊號快訊 ({now_taipei_str} UTC+8)",
-        f"偵測項目(4H/日線,每次從最新收盤往前抓{lookback_candles}根K線,自適應找型態範圍)",
+        f"偵測項目(1H/4H/日線,每次從最新收盤往前抓{lookback_candles}根K線,自適應找型態範圍)",
         f"1.三角收斂(高點遞減/低點遞增,波動收窄至前段的{triangle_ratio_pct}%以下)",
         f"2.盤整突破/跌破(盤整區間<=平均價{max_consolidation_pct:g}%,"
         f"最新K線帶量>={breakout_vol_multiplier}倍MAVOL{mavol_period}突破或跌破區間)",
