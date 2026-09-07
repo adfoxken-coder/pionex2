@@ -11,6 +11,7 @@
   "breakout_vol_multiplier": 1.5,
   "lookback_candles": 200,
   "min_pattern_window": 6,
+  "watchlist_max_age_hours": 120,
   "request_sleep_sec": 0.15,
   "settle_delay_sec": 45,
   "excluded_base_currencies": [
