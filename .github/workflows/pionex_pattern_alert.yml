@@ -8,6 +8,12 @@ on:
     - cron: "*/15 0-15,22,23 * * *"
   workflow_dispatch: {}   # 允許手動點擊執行,方便測試
 
+# 同一時間只允許一個執行中的 run,新的排程/手動觸發會排隊等前一個跑完,
+# 不會同時搶著 push pattern_state.json 造成 git 衝突
+concurrency:
+  group: pionex-pattern-alert
+  cancel-in-progress: false
+
 permissions:
   contents: write   # 需要寫入權限,才能把 pattern_state.json 的更新推回 repo
 
