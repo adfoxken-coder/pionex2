@@ -6,7 +6,7 @@ Pionex 合約(PERP)型態訊號監控 + Telegram 通知
 機器人(TELEGRAM_BOT_TOKEN_2 / TELEGRAM_CHAT_ID_2)發送通知。資產排除邏輯跟
 第一支程式一樣。
 
-只偵測 1 小時 / 4 小時 / 日線 三個週期(不含 15 分鐘)。每次執行時直接問
+只偵測 4 小時 / 日線 兩個週期(不含 15 分鐘 / 1 小時)。每次執行時直接問
 Pionex「這三個週期各自最新收盤的那一根,是不是比上次記錄的更新」,只有真的
 有新的一根收盤,才會針對該週期重新判斷型態,不會因為排程延遲而漏掉或重複。
 
@@ -50,16 +50,18 @@ CONFIG_FILE = os.path.join(os.path.dirname(__file__), "pattern_config.json")
 TAIPEI_TZ = timezone(timedelta(hours=8))
 
 # 這支程式偵測的週期,固定為這三個(不含 15M)
-DETECT_INTERVALS = ["60M", "4H", "1D"]
+DETECT_INTERVALS = ["4H", "1D"]
 
 DEFAULT_CONFIG = {
     "min_24h_amount_usdt": 20000,        # 共用:24 小時成交金額(USDT)門檻
     "mavol_period": 5,                   # 盤整突破/跌破用的 MAVOL 期數
-    "triangle_convergence_ratio": 0.6,   # 三角收斂:後半段波動範圍需收窄到前半段的比例
+    "triangle_convergence_ratio": 0.5,   # 三角收斂:後半段波動範圍需收窄到前半段的比例(越小越嚴格)
+    "triangle_min_window": 16,           # 三角收斂最少要幾根K線才算數(比盤整突破的門檻高,避免小樣本碰巧命中)
+    "triangle_min_range_pct": 0.01,      # 三角收斂:整段平均波動至少要佔平均價的比例,避免死盤誤判
     "max_consolidation_ratio": 0.03,     # 盤整區間:高低價差需 <= 平均收盤價的比例
     "breakout_vol_multiplier": 1.5,      # 突破/跌破:成交量需超過 MAVOL 的倍數
     "lookback_candles": 200,             # 每次往前抓的K線根數上限(型態最長能抓到多遠)
-    "min_pattern_window": 6,             # 型態最少要幾根K線才算數,避免抓到太短、太雜訊的型態
+    "min_pattern_window": 6,             # 盤整突破/跌破最少要幾根K線才算數
     "request_sleep_sec": 0.15,           # 每次呼叫 klines API 之間的間隔,避免超過速率限制
     "settle_delay_sec": 45,              # 排程一開始先等待幾秒,確保交易所該收盤的K線已經寫入完成
 
@@ -95,7 +97,6 @@ INTERVAL_MS = {
 }
 
 INTERVAL_LABELS = {
-    "60M": {"full": "1小時級別", "short": "1h"},
     "4H": {"full": "4小時級別", "short": "4h"},
     "1D": {"full": "日線級別", "short": "1d"},
 }
@@ -314,8 +315,17 @@ def detect_breakout_or_breakdown(closed, config):
     return None, None, None, None
 
 
-def detect_triangle_single(closed, window, ratio):
-    """三角收斂判斷(單一窗口大小)。回傳 True/False。"""
+def detect_triangle_single(closed, window, ratio, min_range_pct):
+    """
+    三角收斂判斷(單一窗口大小)。回傳 True/False。
+
+    除了原本「前半段 vs 後半段」的高點遞減/低點遞增/波動收窄判斷之外,額外
+    加上兩個更嚴謹的檢查,避免被隨機波動或「波動率自然衰減」誤判:
+    1. 三段式單調收斂:拆成前/中/後三段,要求波動範圍連續遞減(前>=中>=後,
+       留一點容錯空間),而不是只看頭尾兩段,濾掉單次運氣矇中的假訊號。
+    2. 最小波動門檻:整段資料本身要有一定波動幅度才算數,太平的死盤不算
+       三角收斂(那種比較適合用盤整突破/跌破來看)。
+    """
     if len(closed) < window:
         return False
 
@@ -339,10 +349,36 @@ def detect_triangle_single(closed, window, ratio):
     lower_highs = second_high < first_high
     narrowing = second_avg_range <= ratio * first_avg_range
 
-    return higher_lows and lower_highs and narrowing
+    if not (higher_lows and lower_highs and narrowing):
+        return False
+
+    # 最小波動門檻:整段平均價要有足夠波動才算有意義的三角收斂
+    avg_price = statistics.mean(float(k["close"]) for k in segment)
+    if avg_price <= 0 or first_avg_range < min_range_pct * avg_price:
+        return False
+
+    # 三段式單調收斂檢查(前/中/後),留 10% 容錯空間避免過度嚴苛
+    third = window // 3
+    if third < 2:
+        return False
+    seg1 = segment[:third]
+    seg2 = segment[third:2 * third]
+    seg3 = segment[2 * third:]
+
+    seg1_avg_range = statistics.mean(float(k["high"]) - float(k["low"]) for k in seg1)
+    seg2_avg_range = statistics.mean(float(k["high"]) - float(k["low"]) for k in seg2)
+    seg3_avg_range = statistics.mean(float(k["high"]) - float(k["low"]) for k in seg3)
+
+    tolerance = 1.1
+    monotonic_narrowing = (
+        seg2_avg_range <= seg1_avg_range * tolerance
+        and seg3_avg_range <= seg2_avg_range * tolerance
+    )
+
+    return monotonic_narrowing
 
 
-def find_max_triangle_window(closed, min_window, max_window, ratio):
+def find_max_triangle_window(closed, min_window, max_window, ratio, min_range_pct):
     """
     從大窗口往小窗口掃描,找出符合三角收斂條件的「最大」窗口大小(根數需為
     偶數,方便均分前後半段)。回傳 window(int)或 None(完全沒有符合)。
@@ -355,7 +391,7 @@ def find_max_triangle_window(closed, min_window, max_window, ratio):
 
     window = start
     while window >= min_window:
-        if detect_triangle_single(closed, window, ratio):
+        if detect_triangle_single(closed, window, ratio, min_range_pct):
             return window
         window -= 2
     return None
@@ -369,8 +405,8 @@ def evaluate_symbol(klines, config, interval_ms, now_ms):
     closed = get_closed_klines(klines, interval_ms, now_ms)
 
     triangle_window = find_max_triangle_window(
-        closed, config["min_pattern_window"], config["lookback_candles"],
-        config["triangle_convergence_ratio"],
+        closed, config["triangle_min_window"], config["lookback_candles"],
+        config["triangle_convergence_ratio"], config["triangle_min_range_pct"],
     )
     breakout = detect_breakout_or_breakdown(closed, config)
 
@@ -392,7 +428,6 @@ def get_latest_closed_candle_time(session, symbol, interval, now_ms):
 
 
 STATE_BOUNDARY_KEYS = {
-    "60M": "last_60m_boundary_ms",
     "4H": "last_4h_boundary_ms",
     "1D": "last_1d_boundary_ms",
 }
@@ -415,7 +450,7 @@ def main():
     state = load_json(STATE_FILE, {})
     session = requests.Session()
 
-    # 分別問 1H / 4H / 1D 各自「最新收盤那一根」是不是比上次記錄的更新,
+    # 分別問 4H / 1D 各自「最新收盤那一根」是不是比上次記錄的更新,
     # 只有真的有新一根收盤,才把該週期加入這次要偵測的清單
     intervals = []
     latest_boundary_times = {}
@@ -520,7 +555,7 @@ def main():
 
     lines = [
         f"📐 Pionex 型態訊號快訊 ({now_taipei_str} UTC+8)",
-        f"偵測項目(1H/4H/日線,每次從最新收盤往前抓{lookback_candles}根K線,自適應找型態範圍)",
+        f"偵測項目(4H/日線,每次從最新收盤往前抓{lookback_candles}根K線,自適應找型態範圍)",
         f"1.三角收斂(高點遞減/低點遞增,波動收窄至前段的{triangle_ratio_pct}%以下)",
         f"2.盤整突破/跌破(盤整區間<=平均價{max_consolidation_pct:g}%,"
         f"最新K線帶量>={breakout_vol_multiplier}倍MAVOL{mavol_period}突破或跌破區間)",
