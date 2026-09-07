@@ -1,8 +1,10 @@
 {
-  "last_60m_boundary_ms": 1788814800000,
+  "last_60m_boundary_ms": 1788818400000,
   "last_4h_boundary_ms": 1788796800000,
   "last_1d_boundary_ms": 1788652800000,
-  "last_run_utc": "2026-09-07T22:49:29.157938+00:00",
-  "last_run_intervals": [],
-  "last_match_count": 0
+  "last_run_utc": "2026-09-07T23:08:58.081088+00:00",
+  "last_run_intervals": [
+    "60M"
+  ],
+  "last_match_count": 55
 }
