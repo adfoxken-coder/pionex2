@@ -14,18 +14,22 @@ Pionex「這三個週期各自最新收盤的那一根,是不是比上次記錄�
 硬分類):每次都從「最新收盤價」往前抓 lookback_candles 根(預設 200 根)
 K線,然後從最近的K線開始往前試著擴張窗口,找出型態實際延伸的範圍:
 
-1. 盤整 + 突破 / 跌破:從最新這根「之前」開始,窗口從小(min_pattern_window,
-   預設 6 根)一路往前擴張,只要「高低價差 <= 平均收盤價的
-   max_consolidation_ratio(預設 3%)」這個條件還能維持,就繼續擴張,直到
-   擴張不下去為止,取「能撐住的最大窗口」當作這段盤整區間的完整範圍。
-   找到這個區間後,再看最新這根K線收盤價:
-     - 收盤價 > 區間最高點,且成交量 > breakout_vol_multiplier 倍的
-       MAVOL(取這根之前 mavol_period 根平均成交量),算「盤整突破」
-     - 收盤價 < 區間最低點,且同樣帶量,算「盤整跌破」
-2. 三角收斂:窗口從大(lookback_candles)往小掃描,每個窗口大小都檢查——
-   後半段最高點 < 前半段最高點(高點遞減)、後半段最低點 > 前半段最低點
-   (低點遞增)、且後半段平均波動範圍收窄到前半段的 triangle_convergence_ratio
-   (預設 60%)以下,取符合條件的「最大窗口」當作這個三角收斂的完整範圍。
+1. 盤整 + 突破 / 跌破:先用「最新兩根確認K線之前」的歷史資料,窗口從小
+   (min_pattern_window,預設 6 根)一路往前擴張,只要「高低價差 <=
+   平均收盤價的 max_consolidation_ratio(預設 3%)」這個條件還能維持,
+   就繼續擴張,取「能撐住的最大窗口」當作這段盤整區間的完整範圍。
+   找到區間後,要求最新連續兩根K線都確認站穩區間外,才算數:
+     - 第一根確認K線帶量(成交量 > breakout_vol_multiplier 倍的
+       MAVOL)衝出區間,且這根與下一根收盤價都 > 區間最高點,兩根的
+       最低價都沒有跌回區間內,才算「盤整突破」
+     - 反過來,兩根收盤價都 < 區間最低點、最高價都沒有漲回區間內,
+       算「盤整跌破」
+2. 三角收斂:窗口從大(lookback_candles)往小掃描,每個窗口大小都檢查
+   高點遞減、低點遞增、波動收窄(前後兩段比較)、三段式單調收斂、最小
+   波動門檻,並且額外要求:找出區段內的樞紐高點/低點,分別畫出壓力線
+   跟支撐線,至少一邊的趨勢線要「摸到」triangle_min_touches(預設 3)
+   個以上的樞紐點,確保是真的畫得出來的三角形,不是隨便湊出來的兩段
+   資料。取符合條件的「最大窗口」當作這個三角收斂的完整範圍。
 
 窗口大小最後會換算成「大約幾天/幾小時」顯示在通知裡(例如 eth(~9d)),方便
 一眼看出這個型態抓到的時間量級。
@@ -58,6 +62,9 @@ DEFAULT_CONFIG = {
     "triangle_convergence_ratio": 0.5,   # 三角收斂:後半段波動範圍需收窄到前半段的比例(越小越嚴格)
     "triangle_min_window": 16,           # 三角收斂最少要幾根K線才算數(比盤整突破的門檻高,避免小樣本碰巧命中)
     "triangle_min_range_pct": 0.01,      # 三角收斂:整段平均波動至少要佔平均價的比例,避免死盤誤判
+    "triangle_min_touches": 3,           # 三角收斂:至少一邊趨勢線(高點壓力線或低點支撐線)要摸到幾個樞紐點
+    "triangle_touch_tolerance_pct": 0.015,  # 樞紐點與趨勢線的容許誤差,佔平均價的比例
+    "triangle_pivot_span": 1,            # 判斷樞紐高/低點時,左右各比較幾根K線
     "max_consolidation_ratio": 0.03,     # 盤整區間:高低價差需 <= 平均收盤價的比例
     "breakout_vol_multiplier": 1.5,      # 突破/跌破:成交量需超過 MAVOL 的倍數
     "lookback_candles": 200,             # 每次往前抓的K線根數上限(型態最長能抓到多遠)
@@ -229,15 +236,17 @@ def get_closed_klines(klines, interval_ms, now_ms):
     return [k for k in sorted_klines if k["time"] + interval_ms <= now_ms]
 
 
-def find_consolidation_range(closed, min_window, max_window, max_consolidation_ratio):
+def find_consolidation_range(history, min_window, max_window, max_consolidation_ratio):
     """
-    從最新這根「之前」開始,往前(往舊的方向)擴張窗口,找出能維持「盤整」
-    條件(高低價差 <= max_consolidation_ratio * 平均收盤價)的最大窗口。
+    從 history 這一段K線的最尾端開始,往前(往舊的方向)擴張窗口,找出能維持
+    「盤整」條件(高低價差 <= max_consolidation_ratio * 平均收盤價)的最大窗口。
+    history 本身不包含任何用來確認突破/跌破的K線,單純是拿來判斷盤整區間的
+    歷史資料。
 
     回傳 {"window": int, "high": float, "low": float},若連最小窗口都不算
     盤整,回傳 None。
     """
-    available = len(closed) - 1  # 不含最新這一根(那根是用來判斷突破/跌破的)
+    available = len(history)
     if available < min_window:
         return None
     max_window = min(max_window, available)
@@ -247,7 +256,7 @@ def find_consolidation_range(closed, min_window, max_window, max_consolidation_r
         return avg_close > 0 and (high - low) <= max_consolidation_ratio * avg_close
 
     window = min_window
-    period = closed[-(window + 1):-1]
+    period = history[-window:]
     high = max(float(k["high"]) for k in period)
     low = min(float(k["low"]) for k in period)
     close_sum = sum(float(k["close"]) for k in period)
@@ -259,7 +268,7 @@ def find_consolidation_range(closed, min_window, max_window, max_consolidation_r
 
     # 持續往舊的方向多納入一根,只要條件還能維持就繼續擴張
     while window < max_window:
-        older_candle = closed[-(window + 2)]
+        older_candle = history[-(window + 1)]
         new_high = max(high, float(older_candle["high"]))
         new_low = min(low, float(older_candle["low"]))
         new_close_sum = close_sum + float(older_candle["close"])
@@ -278,54 +287,137 @@ def detect_breakout_or_breakdown(closed, config):
     """
     回傳 (方向, 窗口根數, 幅度%, 最新收盤價)。
     方向為 "breakout"(突破)/ "breakdown"(跌破)/ None(沒有符合)。
+
+    確認方式:先用「最新兩根之前」的歷史K線找出盤整區間,然後要求最新
+    連續兩根K線都收在區間之外,且這兩根的最低價(突破時)/最高價(跌破時)
+    都沒有跌回/漲回區間內,才算數。成交量的帶量確認看第一根確認K線
+    (也就是實際上真正衝出區間的那一根)。
     """
     min_window = config["min_pattern_window"]
     max_window = config["lookback_candles"]
     mavol_period = config["mavol_period"]
 
+    if len(closed) < 2:
+        return None, None, None, None
+
+    confirm1 = closed[-2]  # 第一根確認K線(真正衝出區間的那一根)
+    confirm2 = closed[-1]  # 第二根確認K線(最新這根,用來確認站穩)
+    history = closed[:-2]  # 拿來判斷盤整區間的歷史資料,不含這兩根確認K線
+
+    if len(history) < mavol_period:
+        return None, None, None, None
+
     consolidation = find_consolidation_range(
-        closed, min_window, max_window, config["max_consolidation_ratio"]
+        history, min_window, max_window, config["max_consolidation_ratio"]
     )
     if consolidation is None:
         return None, None, None, None
 
-    if len(closed) < mavol_period + 1:
-        return None, None, None, None
+    range_high = consolidation["high"]
+    range_low = consolidation["low"]
 
-    latest = closed[-1]
-    latest_close = float(latest["close"])
-    latest_volume = float(latest["volume"])
-
-    mavol_candles = closed[-(mavol_period + 1):-1]
+    mavol_candles = history[-mavol_period:]
     mavol = statistics.mean(float(k["volume"]) for k in mavol_candles)
     if mavol <= 0:
         return None, None, None, None
 
-    vol_ok = latest_volume > config["breakout_vol_multiplier"] * mavol
+    c1_close = float(confirm1["close"])
+    c1_low = float(confirm1["low"])
+    c1_high = float(confirm1["high"])
+    c1_volume = float(confirm1["volume"])
+    c2_close = float(confirm2["close"])
+    c2_low = float(confirm2["low"])
+    c2_high = float(confirm2["high"])
+
+    vol_ok = c1_volume > config["breakout_vol_multiplier"] * mavol
     if not vol_ok:
         return None, None, None, None
 
-    if latest_close > consolidation["high"]:
-        pct = (latest_close - consolidation["high"]) / consolidation["high"] * 100
-        return "breakout", consolidation["window"], pct, latest_close
+    breakout_ok = (
+        c1_close > range_high and c1_low > range_high
+        and c2_close > range_high and c2_low > range_high
+    )
+    if breakout_ok:
+        pct = (c2_close - range_high) / range_high * 100
+        return "breakout", consolidation["window"], pct, c2_close
 
-    if latest_close < consolidation["low"]:
-        pct = (consolidation["low"] - latest_close) / consolidation["low"] * 100
-        return "breakdown", consolidation["window"], pct, latest_close
+    breakdown_ok = (
+        c1_close < range_low and c1_high < range_low
+        and c2_close < range_low and c2_high < range_low
+    )
+    if breakdown_ok:
+        pct = (range_low - c2_close) / range_low * 100
+        return "breakdown", consolidation["window"], pct, c2_close
 
     return None, None, None, None
 
 
-def detect_triangle_single(closed, window, ratio, min_range_pct):
+def find_pivots(segment, kind, pivot_span=1):
+    """
+    找出區段內的樞紐高點/低點(pivot high/low):該根K線的高(或低)點,比左右
+    各 pivot_span 根都高(或都低),才算一個真正的轉折點,用來畫趨勢線。
+    回傳 [(index_in_segment, price), ...]
+    """
+    pivots = []
+    n = len(segment)
+    for i in range(pivot_span, n - pivot_span):
+        if kind == "low":
+            val = float(segment[i]["low"])
+            neighbors = [float(segment[j]["low"]) for j in range(i - pivot_span, i + pivot_span + 1) if j != i]
+            if all(val <= nv for nv in neighbors):
+                pivots.append((i, val))
+        else:
+            val = float(segment[i]["high"])
+            neighbors = [float(segment[j]["high"]) for j in range(i - pivot_span, i + pivot_span + 1) if j != i]
+            if all(val >= nv for nv in neighbors):
+                pivots.append((i, val))
+    return pivots
+
+
+def linear_regression(points):
+    """簡單最小平方法直線回歸,回傳 (斜率, 截距) 或 None(點數不足)"""
+    n = len(points)
+    if n < 2:
+        return None
+    sum_x = sum(p[0] for p in points)
+    sum_y = sum(p[1] for p in points)
+    sum_xx = sum(p[0] * p[0] for p in points)
+    sum_xy = sum(p[0] * p[1] for p in points)
+    denom = n * sum_xx - sum_x * sum_x
+    if denom == 0:
+        return None
+    slope = (n * sum_xy - sum_x * sum_y) / denom
+    intercept = (sum_y - slope * sum_x) / n
+    return slope, intercept
+
+
+def count_trendline_touches(pivots, line, tolerance_abs):
+    """算有多少個樞紐點落在趨勢線附近(容許誤差 tolerance_abs)"""
+    if line is None:
+        return 0
+    slope, intercept = line
+    count = 0
+    for x, y in pivots:
+        predicted = slope * x + intercept
+        if abs(y - predicted) <= tolerance_abs:
+            count += 1
+    return count
+
+
+def detect_triangle_single(closed, window, ratio, min_range_pct, min_touches, touch_tolerance_pct, pivot_span):
     """
     三角收斂判斷(單一窗口大小)。回傳 True/False。
 
     除了原本「前半段 vs 後半段」的高點遞減/低點遞增/波動收窄判斷之外,額外
-    加上兩個更嚴謹的檢查,避免被隨機波動或「波動率自然衰減」誤判:
+    加上三個更嚴謹的檢查,避免被隨機波動或「波動率自然衰減」誤判:
     1. 三段式單調收斂:拆成前/中/後三段,要求波動範圍連續遞減(前>=中>=後,
        留一點容錯空間),而不是只看頭尾兩段,濾掉單次運氣矇中的假訊號。
     2. 最小波動門檻:整段資料本身要有一定波動幅度才算數,太平的死盤不算
        三角收斂(那種比較適合用盤整突破/跌破來看)。
+    3. 趨勢線觸碰驗證:找出區段內的樞紐高點/低點,分別對高點畫一條壓力
+       趨勢線、對低點畫一條支撐趨勢線,至少要有一邊的趨勢線「摸到」
+       min_touches(預設 3)個以上的樞紐點,才算是真正畫得出來的三角形,
+       不是隨便兩段資料湊出來的。
     """
     if len(closed) < window:
         return False
@@ -375,11 +467,25 @@ def detect_triangle_single(closed, window, ratio, min_range_pct):
         seg2_avg_range <= seg1_avg_range * tolerance
         and seg3_avg_range <= seg2_avg_range * tolerance
     )
+    if not monotonic_narrowing:
+        return False
 
-    return monotonic_narrowing
+    # 趨勢線觸碰驗證:至少一邊(高點壓力線或低點支撐線)要摸到 min_touches 個樞紐點
+    low_pivots = find_pivots(segment, "low", pivot_span)
+    high_pivots = find_pivots(segment, "high", pivot_span)
+
+    low_line = linear_regression(low_pivots)
+    high_line = linear_regression(high_pivots)
+
+    tolerance_abs = touch_tolerance_pct * avg_price
+    touches_low = count_trendline_touches(low_pivots, low_line, tolerance_abs)
+    touches_high = count_trendline_touches(high_pivots, high_line, tolerance_abs)
+
+    return touches_low >= min_touches or touches_high >= min_touches
 
 
-def find_max_triangle_window(closed, min_window, max_window, ratio, min_range_pct):
+def find_max_triangle_window(closed, min_window, max_window, ratio, min_range_pct,
+                              min_touches, touch_tolerance_pct, pivot_span):
     """
     從大窗口往小窗口掃描,找出符合三角收斂條件的「最大」窗口大小(根數需為
     偶數,方便均分前後半段)。回傳 window(int)或 None(完全沒有符合)。
@@ -392,7 +498,8 @@ def find_max_triangle_window(closed, min_window, max_window, ratio, min_range_pc
 
     window = start
     while window >= min_window:
-        if detect_triangle_single(closed, window, ratio, min_range_pct):
+        if detect_triangle_single(closed, window, ratio, min_range_pct,
+                                   min_touches, touch_tolerance_pct, pivot_span):
             return window
         window -= 2
     return None
@@ -408,6 +515,8 @@ def evaluate_symbol(klines, config, interval_ms, now_ms):
     triangle_window = find_max_triangle_window(
         closed, config["triangle_min_window"], config["lookback_candles"],
         config["triangle_convergence_ratio"], config["triangle_min_range_pct"],
+        config["triangle_min_touches"], config["triangle_touch_tolerance_pct"],
+        config["triangle_pivot_span"],
     )
     breakout = detect_breakout_or_breakdown(closed, config)
 
@@ -560,7 +669,8 @@ def main():
         f"偵測項目(1H/4H/日線,每次從最新收盤往前抓{lookback_candles}根K線,自適應找型態範圍)",
         f"1.三角收斂(高點遞減/低點遞增,波動收窄至前段的{triangle_ratio_pct}%以下)",
         f"2.盤整突破/跌破(盤整區間<=平均價{max_consolidation_pct:g}%,"
-        f"最新K線帶量>={breakout_vol_multiplier}倍MAVOL{mavol_period}突破或跌破區間)",
+        f"帶量({breakout_vol_multiplier}倍MAVOL{mavol_period})衝出區間後,"
+        f"連續2根收盤+最低/最高價都站穩區間外才算數)",
     ]
 
     for interval in intervals:
