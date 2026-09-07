@@ -3,19 +3,32 @@ Pionex 合約(PERP)型態訊號監控 + Telegram 通知
 =============================================
 
 跟「五條件監控」(fetch_and_alert.py)完全獨立的第二支程式,用另一個 Telegram
-機器人(TELEGRAM_BOT_TOKEN_2 / TELEGRAM_CHAT_ID_2)發送通知。排程時間、資產
-排除邏輯、多週期分層偵測(15M/60M/4H)的機制都跟第一支程式一樣。
+機器人(TELEGRAM_BOT_TOKEN_2 / TELEGRAM_CHAT_ID_2)發送通知。資產排除邏輯跟
+第一支程式一樣。
 
-偵測項目:
-1. 三角收斂:取最近 triangle_window 根K線(預設 20 根),分成前後兩段比較——
+只偵測 1 小時 / 4 小時 / 日線 三個週期(不含 15 分鐘)。每次執行時直接問
+Pionex「這三個週期各自最新收盤的那一根,是不是比上次記錄的更新」,只有真的
+有新的一根收盤,才會針對該週期重新判斷型態,不會因為排程延遲而漏掉或重複。
+
+自適應窗口(型態實際做的時間長短不一,短則幾天,長則快1個月,不用固定天數
+硬分類):每次都從「最新收盤價」往前抓 lookback_candles 根(預設 200 根)
+K線,然後從最近的K線開始往前試著擴張窗口,找出型態實際延伸的範圍:
+
+1. 盤整 + 突破 / 跌破:從最新這根「之前」開始,窗口從小(min_pattern_window,
+   預設 6 根)一路往前擴張,只要「高低價差 <= 平均收盤價的
+   max_consolidation_ratio(預設 3%)」這個條件還能維持,就繼續擴張,直到
+   擴張不下去為止,取「能撐住的最大窗口」當作這段盤整區間的完整範圍。
+   找到這個區間後,再看最新這根K線收盤價:
+     - 收盤價 > 區間最高點,且成交量 > breakout_vol_multiplier 倍的
+       MAVOL(取這根之前 mavol_period 根平均成交量),算「盤整突破」
+     - 收盤價 < 區間最低點,且同樣帶量,算「盤整跌破」
+2. 三角收斂:窗口從大(lookback_candles)往小掃描,每個窗口大小都檢查——
    後半段最高點 < 前半段最高點(高點遞減)、後半段最低點 > 前半段最低點
-   (低點遞增)、且後半段平均波動範圍(高-低)收窄到前半段的
-   triangle_convergence_ratio(預設 60%)以下,三者同時成立才算三角收斂。
-2. 盤整突破:取最新這根「之前」的 breakout_window 根K線(預設 15 根),
-   若這段期間的高低價差 <= 平均收盤價的 max_consolidation_ratio(預設 3%),
-   代表處於盤整;若最新這根K線收盤價突破這段區間的最高點,且成交量 >
-   breakout_vol_multiplier 倍的 MAVOL(取這根之前 mavol_period 根平均成交量,
-   不含本身),才算盤整突破。
+   (低點遞增)、且後半段平均波動範圍收窄到前半段的 triangle_convergence_ratio
+   (預設 60%)以下,取符合條件的「最大窗口」當作這個三角收斂的完整範圍。
+
+窗口大小最後會換算成「大約幾天/幾小時」顯示在通知裡(例如 eth(~9d)),方便
+一眼看出這個型態抓到的時間量級。
 
 執行環境需要兩個環境變數(在 GitHub Actions 裡用 Secrets 設定):
 - TELEGRAM_BOT_TOKEN_2
@@ -36,15 +49,17 @@ CONFIG_FILE = os.path.join(os.path.dirname(__file__), "pattern_config.json")
 
 TAIPEI_TZ = timezone(timedelta(hours=8))
 
+# 這支程式偵測的週期,固定為這三個(不含 15M)
+DETECT_INTERVALS = ["60M", "4H", "1D"]
+
 DEFAULT_CONFIG = {
-    "min_24h_amount_usdt": 20000,        # 條件一(共用):24 小時成交金額(USDT)門檻
-    "mavol_period": 5,                   # 盤整突破用的 MAVOL 期數
-    "triangle_window": 20,               # 三角收斂:取最近幾根K線來判斷
+    "min_24h_amount_usdt": 20000,        # 共用:24 小時成交金額(USDT)門檻
+    "mavol_period": 5,                   # 盤整突破/跌破用的 MAVOL 期數
     "triangle_convergence_ratio": 0.6,   # 三角收斂:後半段波動範圍需收窄到前半段的比例
-    "breakout_window": 15,               # 盤整突破:取最新這根「之前」幾根K線來判斷是否盤整
-    "max_consolidation_ratio": 0.03,     # 盤整突破:盤整區間高低價差需 <= 平均收盤價的比例
-    "breakout_vol_multiplier": 1.5,      # 盤整突破:成交量需超過 MAVOL 的倍數
-    "kline_fetch_limit": 30,             # 每次抓取的 K 線根數(需 >= triangle_window 等)
+    "max_consolidation_ratio": 0.03,     # 盤整區間:高低價差需 <= 平均收盤價的比例
+    "breakout_vol_multiplier": 1.5,      # 突破/跌破:成交量需超過 MAVOL 的倍數
+    "lookback_candles": 200,             # 每次往前抓的K線根數上限(型態最長能抓到多遠)
+    "min_pattern_window": 6,             # 型態最少要幾根K線才算數,避免抓到太短、太雜訊的型態
     "request_sleep_sec": 0.15,           # 每次呼叫 klines API 之間的間隔,避免超過速率限制
     "settle_delay_sec": 45,              # 排程一開始先等待幾秒,確保交易所該收盤的K線已經寫入完成
 
@@ -80,12 +95,15 @@ INTERVAL_MS = {
 }
 
 INTERVAL_LABELS = {
-    "15M": {"full": "15 分鐘級別", "short": "15m"},
     "60M": {"full": "1小時級別", "short": "1h"},
     "4H": {"full": "4小時級別", "short": "4h"},
+    "1D": {"full": "日線級別", "short": "1d"},
 }
 
-REFERENCE_SYMBOL = "BTC_USDT_PERP"  # 用來偵測「1小時/4小時K線是否有新的一根收盤」的參考幣種
+REFERENCE_SYMBOL = "BTC_USDT_PERP"  # 用來偵測「各週期K線是否有新的一根收盤」的參考幣種
+
+DAY_MS = 24 * 60 * 60 * 1000
+HOUR_MS = 60 * 60 * 1000
 
 
 def load_json(path, default):
@@ -153,6 +171,16 @@ def format_price(x):
     return s if s else "0"
 
 
+def format_window_label(window, interval_ms):
+    """把K線根數換算成大約幾天/幾小時,用於通知訊息顯示,例如 ~9d 或 ~18h"""
+    total_ms = window * interval_ms
+    days = total_ms / DAY_MS
+    if days >= 1:
+        return f"~{days:.0f}d"
+    hours = total_ms / HOUR_MS
+    return f"~{hours:.0f}h"
+
+
 def send_telegram_message(text):
     token = os.environ.get("TELEGRAM_BOT_TOKEN_2")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID_2")
@@ -199,9 +227,95 @@ def get_closed_klines(klines, interval_ms, now_ms):
     return [k for k in sorted_klines if k["time"] + interval_ms <= now_ms]
 
 
-def detect_triangle(closed, config):
-    """三角收斂判斷。回傳 True/False。"""
-    window = config["triangle_window"]
+def find_consolidation_range(closed, min_window, max_window, max_consolidation_ratio):
+    """
+    從最新這根「之前」開始,往前(往舊的方向)擴張窗口,找出能維持「盤整」
+    條件(高低價差 <= max_consolidation_ratio * 平均收盤價)的最大窗口。
+
+    回傳 {"window": int, "high": float, "low": float},若連最小窗口都不算
+    盤整,回傳 None。
+    """
+    available = len(closed) - 1  # 不含最新這一根(那根是用來判斷突破/跌破的)
+    if available < min_window:
+        return None
+    max_window = min(max_window, available)
+
+    def ratio_ok(high, low, close_sum, window):
+        avg_close = close_sum / window
+        return avg_close > 0 and (high - low) <= max_consolidation_ratio * avg_close
+
+    window = min_window
+    period = closed[-(window + 1):-1]
+    high = max(float(k["high"]) for k in period)
+    low = min(float(k["low"]) for k in period)
+    close_sum = sum(float(k["close"]) for k in period)
+
+    if not ratio_ok(high, low, close_sum, window):
+        return None  # 連最小窗口都不算盤整,放棄
+
+    best = {"window": window, "high": high, "low": low}
+
+    # 持續往舊的方向多納入一根,只要條件還能維持就繼續擴張
+    while window < max_window:
+        older_candle = closed[-(window + 2)]
+        new_high = max(high, float(older_candle["high"]))
+        new_low = min(low, float(older_candle["low"]))
+        new_close_sum = close_sum + float(older_candle["close"])
+        new_window = window + 1
+
+        if ratio_ok(new_high, new_low, new_close_sum, new_window):
+            window, high, low, close_sum = new_window, new_high, new_low, new_close_sum
+            best = {"window": window, "high": high, "low": low}
+        else:
+            break  # 擴張不下去了,停在目前這個最大範圍
+
+    return best
+
+
+def detect_breakout_or_breakdown(closed, config):
+    """
+    回傳 (方向, 窗口根數, 幅度%, 最新收盤價)。
+    方向為 "breakout"(突破)/ "breakdown"(跌破)/ None(沒有符合)。
+    """
+    min_window = config["min_pattern_window"]
+    max_window = config["lookback_candles"]
+    mavol_period = config["mavol_period"]
+
+    consolidation = find_consolidation_range(
+        closed, min_window, max_window, config["max_consolidation_ratio"]
+    )
+    if consolidation is None:
+        return None, None, None, None
+
+    if len(closed) < mavol_period + 1:
+        return None, None, None, None
+
+    latest = closed[-1]
+    latest_close = float(latest["close"])
+    latest_volume = float(latest["volume"])
+
+    mavol_candles = closed[-(mavol_period + 1):-1]
+    mavol = statistics.mean(float(k["volume"]) for k in mavol_candles)
+    if mavol <= 0:
+        return None, None, None, None
+
+    vol_ok = latest_volume > config["breakout_vol_multiplier"] * mavol
+    if not vol_ok:
+        return None, None, None, None
+
+    if latest_close > consolidation["high"]:
+        pct = (latest_close - consolidation["high"]) / consolidation["high"] * 100
+        return "breakout", consolidation["window"], pct, latest_close
+
+    if latest_close < consolidation["low"]:
+        pct = (consolidation["low"] - latest_close) / consolidation["low"] * 100
+        return "breakdown", consolidation["window"], pct, latest_close
+
+    return None, None, None, None
+
+
+def detect_triangle_single(closed, window, ratio):
+    """三角收斂判斷(單一窗口大小)。回傳 True/False。"""
     if len(closed) < window:
         return False
 
@@ -223,74 +337,49 @@ def detect_triangle(closed, config):
 
     higher_lows = second_low > first_low
     lower_highs = second_high < first_high
-    narrowing = second_avg_range <= config["triangle_convergence_ratio"] * first_avg_range
+    narrowing = second_avg_range <= ratio * first_avg_range
 
     return higher_lows and lower_highs and narrowing
 
 
-def detect_breakout(closed, config):
-    """盤整突破判斷。回傳 (是否符合, 突破幅度%, 最新收盤價) 或 (False, None, None)。"""
-    breakout_window = config["breakout_window"]
-    mavol_period = config["mavol_period"]
+def find_max_triangle_window(closed, min_window, max_window, ratio):
+    """
+    從大窗口往小窗口掃描,找出符合三角收斂條件的「最大」窗口大小(根數需為
+    偶數,方便均分前後半段)。回傳 window(int)或 None(完全沒有符合)。
+    """
+    available = len(closed)
+    max_window = min(max_window, available)
+    start = max_window if max_window % 2 == 0 else max_window - 1
+    if min_window % 2 != 0:
+        min_window += 1
 
-    needed = max(breakout_window + 1, mavol_period + 1)
-    if len(closed) < needed:
-        return False, None, None
-
-    latest = closed[-1]
-    latest_close = float(latest["close"])
-    latest_volume = float(latest["volume"])
-
-    period = closed[-(breakout_window + 1):-1]
-    period_high = max(float(k["high"]) for k in period)
-    period_low = min(float(k["low"]) for k in period)
-    avg_close = statistics.mean(float(k["close"]) for k in period)
-
-    if avg_close <= 0:
-        return False, None, None
-
-    is_consolidating = (period_high - period_low) <= config["max_consolidation_ratio"] * avg_close
-    if not is_consolidating:
-        return False, None, None
-
-    breaks_above = latest_close > period_high
-    if not breaks_above:
-        return False, None, None
-
-    mavol_candles = closed[-(mavol_period + 1):-1]
-    mavol = statistics.mean(float(k["volume"]) for k in mavol_candles)
-    if mavol <= 0:
-        return False, None, None
-
-    vol_ok = latest_volume > config["breakout_vol_multiplier"] * mavol
-    if not vol_ok:
-        return False, None, None
-
-    pct = (latest_close - period_high) / period_high * 100
-    return True, pct, latest_close
+    window = start
+    while window >= min_window:
+        if detect_triangle_single(closed, window, ratio):
+            return window
+        window -= 2
+    return None
 
 
 def evaluate_symbol(klines, config, interval_ms, now_ms):
-    """回傳 {"triangle": bool, "breakout": bool, "breakout_pct": float|None, "close": float|None}"""
+    """回傳 {"triangle_window": int|None, "breakout": (方向, 窗口根數, 幅度%, 收盤價)}"""
     if not klines:
-        return {"triangle": False, "breakout": False, "breakout_pct": None, "close": None}
+        return {"triangle_window": None, "breakout": (None, None, None, None)}
 
     closed = get_closed_klines(klines, interval_ms, now_ms)
 
-    triangle_matched = detect_triangle(closed, config)
-    breakout_matched, breakout_pct, close_price = detect_breakout(closed, config)
+    triangle_window = find_max_triangle_window(
+        closed, config["min_pattern_window"], config["lookback_candles"],
+        config["triangle_convergence_ratio"],
+    )
+    breakout = detect_breakout_or_breakdown(closed, config)
 
-    return {
-        "triangle": triangle_matched,
-        "breakout": breakout_matched,
-        "breakout_pct": breakout_pct,
-        "close": close_price,
-    }
+    return {"triangle_window": triangle_window, "breakout": breakout}
 
 
 def get_latest_closed_candle_time(session, symbol, interval, now_ms):
     """回傳指定週期「最新一根已收盤K線」的開盤時間(ms),沒有資料則回傳 None"""
-    interval_ms = INTERVAL_MS.get(interval, 15 * 60 * 1000)
+    interval_ms = INTERVAL_MS.get(interval, 60 * 60 * 1000)
     try:
         klines = get_klines(session, symbol, interval, limit=5)
     except Exception as e:
@@ -300,6 +389,13 @@ def get_latest_closed_candle_time(session, symbol, interval, now_ms):
     if not closed:
         return None
     return closed[-1]["time"]
+
+
+STATE_BOUNDARY_KEYS = {
+    "60M": "last_60m_boundary_ms",
+    "4H": "last_4h_boundary_ms",
+    "1D": "last_1d_boundary_ms",
+}
 
 
 def main():
@@ -317,23 +413,30 @@ def main():
     now_ms = int(time.time() * 1000)
 
     state = load_json(STATE_FILE, {})
-
     session = requests.Session()
-    intervals = ["15M"]
 
-    latest_60m_time = get_latest_closed_candle_time(session, REFERENCE_SYMBOL, "60M", now_ms)
-    prev_60m_time = state.get("last_60m_boundary_ms")
-    due_60m = latest_60m_time is not None and (prev_60m_time is None or latest_60m_time > prev_60m_time)
-    if due_60m:
-        intervals.append("60M")
-
-    latest_4h_time = get_latest_closed_candle_time(session, REFERENCE_SYMBOL, "4H", now_ms)
-    prev_4h_time = state.get("last_4h_boundary_ms")
-    due_4h = latest_4h_time is not None and (prev_4h_time is None or latest_4h_time > prev_4h_time)
-    if due_4h:
-        intervals.append("4H")
+    # 分別問 1H / 4H / 1D 各自「最新收盤那一根」是不是比上次記錄的更新,
+    # 只有真的有新一根收盤,才把該週期加入這次要偵測的清單
+    intervals = []
+    latest_boundary_times = {}
+    for interval in DETECT_INTERVALS:
+        latest_time = get_latest_closed_candle_time(session, REFERENCE_SYMBOL, interval, now_ms)
+        latest_boundary_times[interval] = latest_time
+        boundary_key = STATE_BOUNDARY_KEYS[interval]
+        prev_time = state.get(boundary_key)
+        due = latest_time is not None and (prev_time is None or latest_time > prev_time)
+        if due:
+            intervals.append(interval)
 
     print(f"本次執行時間點:{run_start_taipei.strftime('%Y-%m-%d %H:%M:%S')} UTC+8,本次偵測週期:{intervals}")
+
+    if not intervals:
+        print("這次沒有任何週期出現新的收盤K線,跳過本次偵測。")
+        state["last_run_utc"] = datetime.now(timezone.utc).isoformat()
+        state["last_run_intervals"] = []
+        state["last_match_count"] = 0
+        save_json(STATE_FILE, state)
+        return
 
     symbols_map = get_perp_symbols()
     tickers = get_perp_tickers()
@@ -360,16 +463,21 @@ def main():
 
     print(f"通過 24 小時成交金額篩選的幣種數量:{len(candidates)} / {len(crypto_only)}")
 
-    triangle_by_interval = {}   # {interval: [base, ...]}
-    breakout_by_interval = {}   # {interval: [(base, pct, close), ...]}
+    fetch_limit = config["lookback_candles"] + config["mavol_period"] + 10
+
+    # {interval: [(base, triangle_window), ...]}
+    triangle_by_interval = {}
+    # {interval: [(base, direction, window, pct, close), ...]}
+    breakout_by_interval = {}
 
     for interval in intervals:
-        interval_ms = INTERVAL_MS.get(interval, 15 * 60 * 1000)
+        interval_ms = INTERVAL_MS[interval]
+
         triangle_matches = []
         breakout_matches = []
         for symbol, base_currency in candidates:
             try:
-                klines = get_klines(session, symbol, interval, config["kline_fetch_limit"])
+                klines = get_klines(session, symbol, interval, fetch_limit)
             except Exception as e:
                 print(f"[警告] 取得 {symbol} {interval} K 線失敗:{e}")
                 continue
@@ -377,22 +485,23 @@ def main():
                 time.sleep(config["request_sleep_sec"])
 
             result = evaluate_symbol(klines, config, interval_ms, now_ms)
-            if result["triangle"]:
-                triangle_matches.append(base_currency)
-            if result["breakout"]:
-                breakout_matches.append((base_currency, result["breakout_pct"], result["close"]))
+            if result["triangle_window"] is not None:
+                triangle_matches.append((base_currency, result["triangle_window"]))
+
+            direction, window, pct, close_price = result["breakout"]
+            if direction is not None:
+                breakout_matches.append((base_currency, direction, window, pct, close_price))
 
         triangle_by_interval[interval] = triangle_matches
         breakout_by_interval[interval] = breakout_matches
-        print(f"[{interval}] 三角收斂:{len(triangle_matches)} 個,盤整突破:{len(breakout_matches)} 個")
+        print(f"[{interval}] 三角收斂:{len(triangle_matches)} 個,盤整突破/跌破:{len(breakout_matches)} 個")
 
     total_matches = sum(len(v) for v in triangle_by_interval.values()) + \
         sum(len(v) for v in breakout_by_interval.values())
 
-    if due_60m:
-        state["last_60m_boundary_ms"] = latest_60m_time
-    if due_4h:
-        state["last_4h_boundary_ms"] = latest_4h_time
+    # 記錄這次已經處理過的各週期K線邊界,避免下次重複觸發同一根
+    for interval in intervals:
+        state[STATE_BOUNDARY_KEYS[interval]] = latest_boundary_times[interval]
     state["last_run_utc"] = datetime.now(timezone.utc).isoformat()
     state["last_run_intervals"] = intervals
     state["last_match_count"] = total_matches
@@ -403,22 +512,22 @@ def main():
         return
 
     now_taipei_str = run_start_taipei.strftime("%Y-%m-%d %H:%M")
-    triangle_window = config["triangle_window"]
     triangle_ratio_pct = int(config["triangle_convergence_ratio"] * 100)
-    breakout_window = config["breakout_window"]
     max_consolidation_pct = config["max_consolidation_ratio"] * 100
     breakout_vol_multiplier = config["breakout_vol_multiplier"]
     mavol_period = config["mavol_period"]
+    lookback_candles = config["lookback_candles"]
 
     lines = [
         f"📐 Pionex 型態訊號快訊 ({now_taipei_str} UTC+8)",
-        "偵測項目",
-        f"1.三角收斂(近{triangle_window}根K線,高點遞減/低點遞增,波動收窄至前段的{triangle_ratio_pct}%以下)",
-        f"2.盤整突破(近{breakout_window}根K線盤整區間<=平均價{max_consolidation_pct:g}%,"
-        f"最新K線帶量>={breakout_vol_multiplier}倍MAVOL{mavol_period}突破區間高點)",
+        f"偵測項目(1H/4H/日線,每次從最新收盤往前抓{lookback_candles}根K線,自適應找型態範圍)",
+        f"1.三角收斂(高點遞減/低點遞增,波動收窄至前段的{triangle_ratio_pct}%以下)",
+        f"2.盤整突破/跌破(盤整區間<=平均價{max_consolidation_pct:g}%,"
+        f"最新K線帶量>={breakout_vol_multiplier}倍MAVOL{mavol_period}突破或跌破區間)",
     ]
 
     for interval in intervals:
+        interval_ms = INTERVAL_MS[interval]
         triangle_matches = triangle_by_interval.get(interval, [])
         breakout_matches = breakout_by_interval.get(interval, [])
         if not triangle_matches and not breakout_matches:
@@ -429,13 +538,20 @@ def main():
         lines.append(f"(當前偵測 {label})")
 
         if triangle_matches:
-            bases_str = ",".join(b.lower() for b in triangle_matches)
-            lines.append(f"三角收斂:{bases_str}")
+            parts = []
+            for base_currency, window in triangle_matches:
+                window_label = format_window_label(window, interval_ms)
+                parts.append(f"{base_currency.lower()}({window_label})")
+            lines.append(f"三角收斂:{','.join(parts)}")
 
-        for base_currency, pct, close_price in breakout_matches:
+        for base_currency, direction, window, pct, close_price in breakout_matches:
             base_lower = base_currency.lower()
+            window_label = format_window_label(window, interval_ms)
+            action_label = "突破" if direction == "breakout" else "跌破"
+            action_name = "盤整突破" if direction == "breakout" else "盤整跌破"
             lines.append(
-                f"盤整突破:{base_lower} 突破區間高點 {pct:.2f}%(現價{format_price(close_price)})"
+                f"{action_name}:{base_lower}({window_label}) "
+                f"{action_label}區間{pct:.2f}%(現價{format_price(close_price)})"
             )
 
     message = "\n".join(lines)
