@@ -1,12 +1,11 @@
 {
   "min_24h_amount_usdt": 20000,
   "mavol_period": 5,
-  "triangle_window": 20,
   "triangle_convergence_ratio": 0.6,
-  "breakout_window": 15,
   "max_consolidation_ratio": 0.03,
   "breakout_vol_multiplier": 1.5,
-  "kline_fetch_limit": 30,
+  "lookback_candles": 200,
+  "min_pattern_window": 6,
   "request_sleep_sec": 0.15,
   "settle_delay_sec": 45,
   "excluded_base_currencies": [
