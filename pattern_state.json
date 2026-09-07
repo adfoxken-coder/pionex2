@@ -1,1 +1,12 @@
-{}
+{
+  "last_60m_boundary_ms": 1788778800000,
+  "last_4h_boundary_ms": 1788768000000,
+  "last_1d_boundary_ms": 1788652800000,
+  "last_run_utc": "2026-09-07T12:54:26.983338+00:00",
+  "last_run_intervals": [
+    "60M",
+    "4H",
+    "1D"
+  ],
+  "last_match_count": 599
+}
