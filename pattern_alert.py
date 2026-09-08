@@ -760,6 +760,7 @@ def main():
     state["last_confirmed_count"] = len(confirmed_events)
     save_json(STATE_FILE, state)
 
+    # 真正突破或跌破,都要推播通知
     if not confirmed_events:
         print("本次沒有追蹤名單標的確認真正突破/跌破,不發送通知。")
         return
