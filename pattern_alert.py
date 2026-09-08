@@ -69,7 +69,9 @@ DEFAULT_CONFIG = {
     "triangle_touch_tolerance_pct": 0.015,  # 樞紐點與趨勢線的容許誤差,佔平均價的比例
     "triangle_pivot_span": 1,            # 判斷樞紐高/低點時,左右各比較幾根K線
     "max_consolidation_ratio": 0.03,     # 盤整區間:高低價差需 <= 平均收盤價的比例
+    "min_consolidation_activity_ratio": 0.15,  # 盤整區間內,每根K線平均高低價差至少要佔整個區間寬度的比例,避免抓到低流動性死盤(只靠零星插針碰到邊界)
     "breakout_vol_multiplier": 1.5,      # 1H 確認突破/跌破:成交量需超過 MAVOL 的倍數
+    "min_breakout_pct": 1.5,             # 1H 確認突破/跌破:最新收盤價超出區間的幅度至少要達到這個百分比,避免低流動性小幣隨便插針就技術上符合但沒有實際交易價值
     "lookback_candles": 200,             # 4H/1D 每次往前抓的K線根數上限
     "min_pattern_window": 6,             # 盤整狀態最少要幾根K線才算數
     "double_pattern_max_height_diff_pct": 0.05,  # M頂/W底:兩個頭(底)的最高(低)價最多可以相差的比例
@@ -262,14 +264,21 @@ def get_closed_klines(klines, interval_ms, now_ms):
     return [k for k in sorted_klines if k["time"] + interval_ms <= now_ms]
 
 
-def find_consolidation_range(closed, min_window, max_window, max_consolidation_ratio):
+def find_consolidation_range(closed, min_window, max_window, max_consolidation_ratio,
+                              min_activity_ratio):
     """
     從這批K線的最尾端開始,往前(往舊的方向)擴張窗口,找出能維持「盤整」
     條件(高低價差 <= max_consolidation_ratio * 平均收盤價)的最大窗口。
     這裡不預留任何「確認K線」,單純判斷「現在是不是正處於盤整」。
 
+    額外加上「活躍度」檢查:算出這段窗口裡每根K線平均的高低價差,如果
+    這個平均值相對於整個盤整區間的寬度太小(min_activity_ratio),代表
+    大部分K線都窩在區間裡一個很小的角落,只是零星插針才碰到邊界——這種
+    低流動性的「死盤」不算數,避免抓到那種隨便一根爆量插針就技術上符合
+    條件,但實際上沒有交易價值、更像主力誘多的假訊號。
+
     回傳 {"window": int, "high": float, "low": float},若連最小窗口都不算
-    盤整,回傳 None。
+    盤整(或不夠活躍),回傳 None。
     """
     available = len(closed)
     if available < min_window:
@@ -304,6 +313,15 @@ def find_consolidation_range(closed, min_window, max_window, max_consolidation_r
             best = {"window": window, "high": high, "low": low}
         else:
             break  # 擴張不下去了,停在目前這個最大範圍
+
+    total_range = best["high"] - best["low"]
+    if total_range <= 0:
+        return None
+
+    best_period = closed[-best["window"]:]
+    avg_candle_range = statistics.mean(float(k["high"]) - float(k["low"]) for k in best_period)
+    if avg_candle_range < min_activity_ratio * total_range:
+        return None  # 大部分K線都窩在區間內一個小角落,判定為低流動性死盤,不算數
 
     return best
 
@@ -593,7 +611,8 @@ def find_double_bottom(closed, config):
     return None
 
 
-def check_breakout_confirmation(closed, range_high, range_low, mavol_period, vol_multiplier):
+def check_breakout_confirmation(closed, range_high, range_low, mavol_period, vol_multiplier,
+                                 min_breakout_pct):
     """
     驗證「最新連續三根K線」是不是真的確認站穩在指定區間(range_low,
     range_high)之外:
@@ -601,6 +620,9 @@ def check_breakout_confirmation(closed, range_high, range_low, mavol_period, vol
         MAVOL
       - 接下來兩根不需要帶量,但收盤價、最低價(突破時)/最高價(跌破時)
         都要維持在區間外,只要中途有一根跌回/漲回區間內就不算數
+      - 最新這根(第三根)收盤價超出區間的幅度,至少要 >= min_breakout_pct,
+        避免像低流動性小幣那種盤整區間本身就很窄、隨便一根插針就技術上
+        「符合條件」但實際上根本沒有交易價值的假訊號
 
     回傳 (方向, 幅度%, 最新收盤價),方向為 "breakout" / "breakdown" / None。
     幅度%與最新收盤價都是用最後一根(第三根)的收盤價計算。
@@ -640,7 +662,9 @@ def check_breakout_confirmation(closed, range_high, range_low, mavol_period, vol
     )
     if breakout_ok:
         pct = (c2_close - range_high) / range_high * 100
-        return "breakout", pct, c2_close
+        if pct >= min_breakout_pct:
+            return "breakout", pct, c2_close
+        return None, None, None
 
     breakdown_ok = (
         b_close < range_low and b_high < range_low
@@ -649,7 +673,9 @@ def check_breakout_confirmation(closed, range_high, range_low, mavol_period, vol
     )
     if breakdown_ok:
         pct = (range_low - c2_close) / range_low * 100
-        return "breakdown", pct, c2_close
+        if pct >= min_breakout_pct:
+            return "breakdown", pct, c2_close
+        return None, None, None
 
     return None, None, None
 
@@ -712,7 +738,7 @@ def get_pattern_matches_for_interval(session, interval, candidates, config, now_
 
         consolidation = find_consolidation_range(
             closed, config["min_pattern_window"], config["lookback_candles"],
-            config["max_consolidation_ratio"],
+            config["max_consolidation_ratio"], config["min_consolidation_activity_ratio"],
         )
         if consolidation is not None:
             matches.append({
@@ -892,6 +918,7 @@ def main():
             direction, pct, close_price = check_breakout_confirmation(
                 closed_1h, entry["range_high"], entry["range_low"],
                 config["mavol_period"], config["breakout_vol_multiplier"],
+                config["min_breakout_pct"],
             )
 
             if direction is not None:
@@ -973,7 +1000,8 @@ def main():
     lines = [
         f"📐 Pionex 型態確認突破快訊 ({now_taipei_str} UTC+8)",
         "流程:4H/日線先抓出三角收斂或盤整中的標的,",
-        "1H連續三根K線(第一根需帶量衝出區間,後兩根不用帶量但要站穩)才算真正突破/跌破。",
+        "1H連續三根K線(第一根需帶量衝出區間,後兩根不用帶量但要站穩,"
+        "且幅度需達最低門檻)才算真正突破/跌破。",
     ]
 
     for e in confirmed_events:
