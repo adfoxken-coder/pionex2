@@ -50,6 +50,10 @@ PIONEX_BASE = "https://api.pionex.com"
 STATE_FILE = os.path.join(os.path.dirname(__file__), "pattern_state.json")
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "pattern_config.json")
 
+# 跟「訊號機器人」(fetch_and_alert.py,在 pionex repo)共用的非加密貨幣排除清單。
+# 每次執行都會先嘗試從這裡抓最新清單,失敗才退回用本地 pattern_config.json 裡的清單。
+SHARED_EXCLUDE_URL = "https://raw.githubusercontent.com/adfoxken-coder/pionex/main/shared_excluded_assets.json"
+
 TAIPEI_TZ = timezone(timedelta(hours=8))
 
 # 第一階段(找候選標的)只用這兩個週期
@@ -200,6 +204,24 @@ def get_klines(session, symbol, interval, limit):
     if not data.get("result"):
         return []
     return data["data"]["klines"]
+
+
+def get_shared_exclusions():
+    """
+    嘗試從共用檔案(SHARED_EXCLUDE_URL)即時抓取最新的排除清單,跟「訊號機器人」
+    (fetch_and_alert.py)共用同一份非加密貨幣排除清單。
+    成功回傳 dict,失敗回傳 None(呼叫端會退回使用本地 pattern_config.json 裡的清單)。
+    """
+    try:
+        resp = requests.get(SHARED_EXCLUDE_URL, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        if not isinstance(data, dict):
+            raise ValueError("共用排除清單格式不正確")
+        return data
+    except Exception as e:
+        print(f"[警告] 無法取得共用排除清單,改用本地備援清單:{e}")
+        return None
 
 
 def format_price(x):
@@ -782,6 +804,17 @@ def main():
     config = load_json(CONFIG_FILE, DEFAULT_CONFIG)
     for k, v in DEFAULT_CONFIG.items():
         config.setdefault(k, v)
+
+    # 嘗試用共用排除清單覆蓋本地清單,跟「訊號機器人」(fetch_and_alert.py)
+    # 共用同一份非加密貨幣排除清單,以後只要更新那一份共用檔案就好
+    shared = get_shared_exclusions()
+    if shared:
+        for key in ("excluded_base_currencies", "excluded_stablecoin_bases", "exclude_name_keywords"):
+            if key in shared:
+                config[key] = shared[key]
+        print("已套用共用排除清單")
+    else:
+        print("改用本地 pattern_config.json 裡的排除清單")
 
     run_start_taipei = datetime.now(TAIPEI_TZ)
 
