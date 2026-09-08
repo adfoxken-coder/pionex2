@@ -1,8 +1,8 @@
 {
-  "last_60m_boundary_ms": 1788843600000,
+  "last_60m_boundary_ms": 1788847200000,
   "last_4h_boundary_ms": 1788825600000,
   "last_1d_boundary_ms": 1788739200000,
-  "last_run_utc": "2026-09-08T06:48:22.311856+00:00",
+  "last_run_utc": "2026-09-08T07:03:51.109252+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -102,8 +102,8 @@
       "window": 19,
       "range_high": 256.85,
       "range_low": 250.97,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788850976553,
+      "fail_count": 1
     },
     "ASTER_USDT_PERP|4H|triangle": {
       "symbol": "ASTER_USDT_PERP",
@@ -278,8 +278,8 @@
       "window": 23,
       "range_high": 27.57,
       "range_low": 26.76,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788850976553,
+      "fail_count": 1
     },
     "BRENTOIL_USDT_PERP|4H|consolidation": {
       "symbol": "BRENTOIL_USDT_PERP",
@@ -1293,17 +1293,6 @@
       "added_ms": 1788847218846,
       "fail_count": 1
     },
-    "SHAZX_USDT_PERP|4H|consolidation": {
-      "symbol": "SHAZX_USDT_PERP",
-      "base": "SHAZX",
-      "source_interval": "4H",
-      "pattern_type": "consolidation",
-      "window": 13,
-      "range_high": 55.08,
-      "range_low": 54.34,
-      "added_ms": 1788825728044,
-      "fail_count": 0
-    },
     "SKR_USDT_PERP|4H|triangle": {
       "symbol": "SKR_USDT_PERP",
       "base": "SKR",
@@ -1565,8 +1554,8 @@
       "window": 19,
       "range_high": 474.1,
       "range_low": 464.8,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788850976553,
+      "fail_count": 1
     },
     "WLFI_USDT_PERP|4H|consolidation": {
       "symbol": "WLFI_USDT_PERP",
@@ -2269,8 +2258,8 @@
       "window": 6,
       "range_high": 750.61,
       "range_low": 734.27,
-      "added_ms": 1788840039418,
-      "fail_count": 0
+      "added_ms": 1788850976553,
+      "fail_count": 1
     },
     "BSPX_USDT_PERP|4H|consolidation": {
       "symbol": "BSPX_USDT_PERP",
@@ -2313,8 +2302,8 @@
       "window": 6,
       "range_high": 262.05,
       "range_low": 255.43,
-      "added_ms": 1788840039418,
-      "fail_count": 0
+      "added_ms": 1788850976553,
+      "fail_count": 1
     },
     "FLNCX_USDT_PERP|4H|triangle": {
       "symbol": "FLNCX_USDT_PERP",
@@ -2482,5 +2471,5 @@
       "fail_count": 0
     }
   },
-  "last_confirmed_count": 0
+  "last_confirmed_count": 1
 }
