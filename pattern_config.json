@@ -10,7 +10,6 @@
   "max_consolidation_ratio": 0.03,
   "min_consolidation_activity_ratio": 0.15,
   "breakout_vol_multiplier": 1.5,
-  "min_breakout_pct": 1.5,
   "lookback_candles": 200,
   "min_pattern_window": 6,
   "double_pattern_max_height_diff_pct": 0.05,
