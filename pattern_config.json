@@ -21,6 +21,7 @@
     "PFEX", "INTCX", "HOODX", "AMZNX", "METAX", "COINX", "MSFTX",
     "TQQQX", "DFDVX", "ASMLX",
     "AAOIX", "AXTIX", "CXMTX", "DRAMX", "SKHX",
+    "SNDKX", "USOX", "BRENTOIL",
     "PPLTX", "XAU", "XAG", "XPT", "XPD", "PAXG", "XAUT"
   ],
   "excluded_stablecoin_bases": [
