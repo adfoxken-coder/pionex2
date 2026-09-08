@@ -1,8 +1,8 @@
 {
-  "last_60m_boundary_ms": 1788850800000,
+  "last_60m_boundary_ms": 1788854400000,
   "last_4h_boundary_ms": 1788840000000,
   "last_1d_boundary_ms": 1788739200000,
-  "last_run_utc": "2026-09-08T08:54:35.290814+00:00",
+  "last_run_utc": "2026-09-08T09:14:22.757575+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -102,8 +102,8 @@
       "window": 19,
       "range_high": 256.85,
       "range_low": 250.97,
-      "added_ms": 1788850976553,
-      "fail_count": 1
+      "added_ms": 1788858801109,
+      "fail_count": 2
     },
     "ASTER_USDT_PERP|4H|triangle": {
       "symbol": "ASTER_USDT_PERP",
@@ -280,17 +280,6 @@
       "range_low": 27.08,
       "added_ms": 1788850976553,
       "fail_count": 1
-    },
-    "BRENTOIL_USDT_PERP|4H|consolidation": {
-      "symbol": "BRENTOIL_USDT_PERP",
-      "base": "BRENTOIL",
-      "source_interval": "4H",
-      "pattern_type": "consolidation",
-      "window": 21,
-      "range_high": 97.901,
-      "range_low": 95.19,
-      "added_ms": 1788825728044,
-      "fail_count": 0
     },
     "BSB_USDT_PERP|4H|triangle": {
       "symbol": "BSB_USDT_PERP",
@@ -1059,8 +1048,8 @@
       "window": 18,
       "range_high": 163.21,
       "range_low": 159.14,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788858801109,
+      "fail_count": 1
     },
     "ORDI_USDT_PERP|4H|triangle": {
       "symbol": "ORDI_USDT_PERP",
@@ -1502,17 +1491,6 @@
       "added_ms": 1788825728044,
       "fail_count": 0
     },
-    "USOX_USDT_PERP|4H|consolidation": {
-      "symbol": "USOX_USDT_PERP",
-      "base": "USOX",
-      "source_interval": "4H",
-      "pattern_type": "consolidation",
-      "window": 21,
-      "range_high": 144.42,
-      "range_low": 140.89,
-      "added_ms": 1788825728044,
-      "fail_count": 0
-    },
     "US_USDT_PERP|4H|triangle": {
       "symbol": "US_USDT_PERP",
       "base": "US",
@@ -1565,17 +1543,6 @@
       "window": 13,
       "range_high": 0.0573,
       "range_low": 0.0558,
-      "added_ms": 1788825728044,
-      "fail_count": 0
-    },
-    "WTI_USDT_PERP|4H|consolidation": {
-      "symbol": "WTI_USDT_PERP",
-      "base": "CL",
-      "source_interval": "4H",
-      "pattern_type": "consolidation",
-      "window": 20,
-      "range_high": 93.21,
-      "range_low": 90.77,
       "added_ms": 1788825728044,
       "fail_count": 0
     },
@@ -2614,5 +2581,5 @@
       "fail_count": 0
     }
   },
-  "last_confirmed_count": 0
+  "last_confirmed_count": 3
 }
