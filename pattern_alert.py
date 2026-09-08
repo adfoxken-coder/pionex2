@@ -71,7 +71,6 @@ DEFAULT_CONFIG = {
     "max_consolidation_ratio": 0.03,     # 盤整區間:高低價差需 <= 平均收盤價的比例
     "min_consolidation_activity_ratio": 0.15,  # 盤整區間內,每根K線平均高低價差至少要佔整個區間寬度的比例,避免抓到低流動性死盤(只靠零星插針碰到邊界)
     "breakout_vol_multiplier": 1.5,      # 1H 確認突破/跌破:成交量需超過 MAVOL 的倍數
-    "min_breakout_pct": 1.5,             # 1H 確認突破/跌破:最新收盤價超出區間的幅度至少要達到這個百分比,避免低流動性小幣隨便插針就技術上符合但沒有實際交易價值
     "lookback_candles": 200,             # 4H/1D 每次往前抓的K線根數上限
     "min_pattern_window": 6,             # 盤整狀態最少要幾根K線才算數
     "double_pattern_max_height_diff_pct": 0.05,  # M頂/W底:兩個頭(底)的最高(低)價最多可以相差的比例
@@ -611,8 +610,7 @@ def find_double_bottom(closed, config):
     return None
 
 
-def check_breakout_confirmation(closed, range_high, range_low, mavol_period, vol_multiplier,
-                                 min_breakout_pct):
+def check_breakout_confirmation(closed, range_high, range_low, mavol_period, vol_multiplier):
     """
     驗證「最新連續三根K線」是不是真的確認站穩在指定區間(range_low,
     range_high)之外:
@@ -620,9 +618,6 @@ def check_breakout_confirmation(closed, range_high, range_low, mavol_period, vol
         MAVOL
       - 接下來兩根不需要帶量,但收盤價、最低價(突破時)/最高價(跌破時)
         都要維持在區間外,只要中途有一根跌回/漲回區間內就不算數
-      - 最新這根(第三根)收盤價超出區間的幅度,至少要 >= min_breakout_pct,
-        避免像低流動性小幣那種盤整區間本身就很窄、隨便一根插針就技術上
-        「符合條件」但實際上根本沒有交易價值的假訊號
 
     回傳 (方向, 幅度%, 最新收盤價),方向為 "breakout" / "breakdown" / None。
     幅度%與最新收盤價都是用最後一根(第三根)的收盤價計算。
@@ -662,9 +657,7 @@ def check_breakout_confirmation(closed, range_high, range_low, mavol_period, vol
     )
     if breakout_ok:
         pct = (c2_close - range_high) / range_high * 100
-        if pct >= min_breakout_pct:
-            return "breakout", pct, c2_close
-        return None, None, None
+        return "breakout", pct, c2_close
 
     breakdown_ok = (
         b_close < range_low and b_high < range_low
@@ -673,9 +666,7 @@ def check_breakout_confirmation(closed, range_high, range_low, mavol_period, vol
     )
     if breakdown_ok:
         pct = (range_low - c2_close) / range_low * 100
-        if pct >= min_breakout_pct:
-            return "breakdown", pct, c2_close
-        return None, None, None
+        return "breakdown", pct, c2_close
 
     return None, None, None
 
@@ -918,7 +909,6 @@ def main():
             direction, pct, close_price = check_breakout_confirmation(
                 closed_1h, entry["range_high"], entry["range_low"],
                 config["mavol_period"], config["breakout_vol_multiplier"],
-                config["min_breakout_pct"],
             )
 
             if direction is not None:
