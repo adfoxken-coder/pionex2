@@ -2,10 +2,10 @@ name: Pionex Pattern Alert
 
 on:
   schedule:
-    # 台北時間(UTC+8)每天 06:00~23:59,每 15 分鐘執行一次
+    # 台北時間(UTC+8)每天 06:00~23:59,每 5 分鐘執行一次
     # 換算成 UTC:22:00(前一天)~ 15:59(當天),因跨過 UTC 午夜分成兩段 hour 範圍
     # GitHub 排程有時會延遲幾分鐘,屬正常現象
-    - cron: "*/15 0-15,22,23 * * *"
+    - cron: "*/5 0-15,22,23 * * *"
   workflow_dispatch: {}   # 允許手動點擊執行,方便測試
 
 # 同一時間只允許一個執行中的 run,新的排程/手動觸發會排隊等前一個跑完,
@@ -44,3 +44,4 @@ jobs:
           git diff --staged --quiet || git commit -m "Update pattern state [skip ci]"
           git pull --rebase origin main
           git push
+
