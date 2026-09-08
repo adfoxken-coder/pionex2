@@ -1,8 +1,8 @@
 {
-  "last_60m_boundary_ms": 1788865200000,
+  "last_60m_boundary_ms": 1788868800000,
   "last_4h_boundary_ms": 1788854400000,
   "last_1d_boundary_ms": 1788739200000,
-  "last_run_utc": "2026-09-08T12:51:03.736427+00:00",
+  "last_run_utc": "2026-09-08T13:07:32.097808+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -861,8 +861,8 @@
       "window": 7,
       "range_high": 1057.99,
       "range_low": 1026.94,
-      "added_ms": 1788861777151,
-      "fail_count": 2
+      "added_ms": 1788872796771,
+      "fail_count": 3
     },
     "NATGAS_USDT_PERP|4H|triangle": {
       "symbol": "NATGAS_USDT_PERP",
@@ -1477,8 +1477,8 @@
       "window": 14,
       "range_high": 18.19,
       "range_low": 17.66,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788872796771,
+      "fail_count": 1
     },
     "US_USDT_PERP|4H|triangle": {
       "symbol": "US_USDT_PERP",
