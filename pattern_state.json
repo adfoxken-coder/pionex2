@@ -1,8 +1,8 @@
 {
-  "last_60m_boundary_ms": 1788854400000,
+  "last_60m_boundary_ms": 1788858000000,
   "last_4h_boundary_ms": 1788840000000,
   "last_1d_boundary_ms": 1788739200000,
-  "last_run_utc": "2026-09-08T09:49:49.556776+00:00",
+  "last_run_utc": "2026-09-08T10:03:57.555544+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -47,8 +47,8 @@
       "window": 42,
       "range_high": 315.37,
       "range_low": 303.9,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788861777151,
+      "fail_count": 1
     },
     "AMATX_USDT_PERP|4H|consolidation": {
       "symbol": "AMATX_USDT_PERP",
@@ -201,8 +201,8 @@
       "window": 40,
       "range_high": 275.15,
       "range_low": 265.64,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788861777151,
+      "fail_count": 1
     },
     "BEX_USDT_PERP|4H|consolidation": {
       "symbol": "BEX_USDT_PERP",
@@ -333,8 +333,8 @@
       "window": 40,
       "range_high": 0.05046,
       "range_low": 0.04413,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788861777151,
+      "fail_count": 1
     },
     "BTW_USDT_PERP|4H|triangle": {
       "symbol": "BTW_USDT_PERP",
@@ -366,8 +366,8 @@
       "window": 36,
       "range_high": 215.51,
       "range_low": 210.02,
-      "added_ms": 1788847218846,
-      "fail_count": 1
+      "added_ms": 1788861777151,
+      "fail_count": 2
     },
     "CBRS_USDT_PERP|4H|consolidation": {
       "symbol": "CBRS_USDT_PERP",
@@ -377,8 +377,8 @@
       "window": 17,
       "range_high": 215.51,
       "range_low": 209.85,
-      "added_ms": 1788847218846,
-      "fail_count": 1
+      "added_ms": 1788861777151,
+      "fail_count": 2
     },
     "COOKIE_USDT_PERP|4H|triangle": {
       "symbol": "COOKIE_USDT_PERP",
@@ -828,8 +828,8 @@
       "window": 44,
       "range_high": 146.22,
       "range_low": 144.18,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788861777151,
+      "fail_count": 1
     },
     "MRNAX_USDT_PERP|4H|consolidation": {
       "symbol": "MRNAX_USDT_PERP",
@@ -839,8 +839,8 @@
       "window": 22,
       "range_high": 147.11,
       "range_low": 144.15,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788861777151,
+      "fail_count": 1
     },
     "MRVLX_USDT_PERP|4H|consolidation": {
       "symbol": "MRVLX_USDT_PERP",
@@ -850,8 +850,8 @@
       "window": 7,
       "range_high": 229.62,
       "range_low": 223.16,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788861777151,
+      "fail_count": 1
     },
     "MUX_USDT_PERP|4H|consolidation": {
       "symbol": "MUX_USDT_PERP",
@@ -861,8 +861,8 @@
       "window": 7,
       "range_high": 1057.99,
       "range_low": 1026.94,
-      "added_ms": 1788837211038,
-      "fail_count": 1
+      "added_ms": 1788861777151,
+      "fail_count": 2
     },
     "NATGAS_USDT_PERP|4H|triangle": {
       "symbol": "NATGAS_USDT_PERP",
@@ -1004,8 +1004,8 @@
       "window": 16,
       "range_high": 7.81,
       "range_low": 7.6,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788861777151,
+      "fail_count": 1
     },
     "ONG_USDT_PERP|4H|triangle": {
       "symbol": "ONG_USDT_PERP",
@@ -1037,8 +1037,8 @@
       "window": 8,
       "range_high": 0.057,
       "range_low": 0.0555,
-      "added_ms": 1788840039418,
-      "fail_count": 1
+      "added_ms": 1788861777151,
+      "fail_count": 2
     },
     "ORCLX_USDT_PERP|4H|consolidation": {
       "symbol": "ORCLX_USDT_PERP",
@@ -1147,8 +1147,8 @@
       "window": 50,
       "range_high": 177.43,
       "range_low": 173.18,
-      "added_ms": 1788833220308,
-      "fail_count": 1
+      "added_ms": 1788861777151,
+      "fail_count": 2
     },
     "PLTRX_USDT_PERP|4H|consolidation": {
       "symbol": "PLTRX_USDT_PERP",
@@ -1158,8 +1158,8 @@
       "window": 22,
       "range_high": 177.43,
       "range_low": 173.18,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788861777151,
+      "fail_count": 1
     },
     "POL_USDT_PERP|4H|triangle": {
       "symbol": "POL_USDT_PERP",
@@ -1301,17 +1301,6 @@
       "window": 162,
       "range_high": 0.06195,
       "range_low": 0.04891,
-      "added_ms": 1788825728044,
-      "fail_count": 0
-    },
-    "SNDKX_USDT_PERP|4H|consolidation": {
-      "symbol": "SNDKX_USDT_PERP",
-      "base": "SNDKX",
-      "source_interval": "4H",
-      "pattern_type": "consolidation",
-      "window": 6,
-      "range_high": 1821.31,
-      "range_low": 1776.11,
       "added_ms": 1788825728044,
       "fail_count": 0
     },
@@ -2379,8 +2368,8 @@
       "window": 54,
       "range_high": 60.66,
       "range_low": 59.53,
-      "added_ms": 1788840039418,
-      "fail_count": 0
+      "added_ms": 1788861777151,
+      "fail_count": 1
     },
     "SLVX_USDT_PERP|4H|consolidation": {
       "symbol": "SLVX_USDT_PERP",
@@ -2423,8 +2412,8 @@
       "window": 6,
       "range_high": 80.84,
       "range_low": 78.56,
-      "added_ms": 1788840039418,
-      "fail_count": 0
+      "added_ms": 1788861777151,
+      "fail_count": 1
     },
     "XRP_USDT_PERP|4H|consolidation": {
       "symbol": "XRP_USDT_PERP",
@@ -2577,9 +2566,9 @@
       "window": 6,
       "range_high": 40.33,
       "range_low": 39.33,
-      "added_ms": 1788855569800,
-      "fail_count": 0
+      "added_ms": 1788861777151,
+      "fail_count": 1
     }
   },
-  "last_confirmed_count": 0
+  "last_confirmed_count": 1
 }
