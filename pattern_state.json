@@ -1,8 +1,8 @@
 {
-  "last_60m_boundary_ms": 1788836400000,
+  "last_60m_boundary_ms": 1788840000000,
   "last_4h_boundary_ms": 1788825600000,
   "last_1d_boundary_ms": 1788739200000,
-  "last_run_utc": "2026-09-08T04:55:33.954119+00:00",
+  "last_run_utc": "2026-09-08T05:15:09.823317+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -1642,8 +1642,8 @@
       "window": 150,
       "range_high": 0.09035,
       "range_low": 0.05444,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788844452482,
+      "fail_count": 1
     },
     "AIN_USDT_PERP|1D|triangle": {
       "symbol": "AIN_USDT_PERP",
@@ -1807,8 +1807,8 @@
       "window": 20,
       "range_high": 8.062,
       "range_low": 7.107,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788844452482,
+      "fail_count": 1
     },
     "EVAA_USDT_PERP|1D|triangle": {
       "symbol": "EVAA_USDT_PERP",
