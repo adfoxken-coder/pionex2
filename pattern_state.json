@@ -1,8 +1,8 @@
 {
-  "last_60m_boundary_ms": 1788825600000,
+  "last_60m_boundary_ms": 1788829200000,
   "last_4h_boundary_ms": 1788811200000,
   "last_1d_boundary_ms": 1788739200000,
-  "last_run_utc": "2026-09-08T01:53:17.149641+00:00",
+  "last_run_utc": "2026-09-08T02:07:54.678447+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -1191,8 +1191,8 @@
       "window": 48,
       "range_high": 177.43,
       "range_low": 174.57,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788833220308,
+      "fail_count": 1
     },
     "PLTRX_USDT_PERP|4H|consolidation": {
       "symbol": "PLTRX_USDT_PERP",
