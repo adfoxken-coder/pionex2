@@ -85,6 +85,7 @@ DEFAULT_CONFIG = {
         "PFEX", "INTCX", "HOODX", "AMZNX", "METAX", "COINX", "MSFTX",
         "TQQQX", "DFDVX", "ASMLX",
         "AAOIX", "AXTIX", "CXMTX", "DRAMX", "SKHX",
+        "SNDKX", "USOX", "BRENTOIL",
         "PPLTX", "XAU", "XAG", "XPT", "XPD", "PAXG", "XAUT",
     ],
     "excluded_stablecoin_bases": [
@@ -455,6 +456,29 @@ def get_triangle_apex_range(closed, window):
     return high, low
 
 
+def get_triangle_touched_sides(closed, window, min_touches, touch_tolerance_pct, pivot_span):
+    """
+    給定已經確認符合三角收斂的窗口大小,回傳「哪一邊的趨勢線摸到 >= min_touches
+    個樞紐點」:(touched_low, touched_high),分別對應下方支撐線、上方壓力線。
+    後續驗證真正突破/跌破時,方向要跟摸到的那一邊一致才算數(例如要突破,
+    上方壓力線本身要摸到足夠的點;要跌破,下方支撐線本身要摸到足夠的點)。
+    """
+    segment = closed[-window:]
+    avg_price = statistics.mean(float(k["close"]) for k in segment)
+    tolerance_abs = touch_tolerance_pct * avg_price
+
+    low_pivots = find_pivots(segment, "low", pivot_span)
+    high_pivots = find_pivots(segment, "high", pivot_span)
+
+    low_line = linear_regression(low_pivots)
+    high_line = linear_regression(high_pivots)
+
+    touches_low = count_trendline_touches(low_pivots, low_line, tolerance_abs)
+    touches_high = count_trendline_touches(high_pivots, high_line, tolerance_abs)
+
+    return touches_low >= min_touches, touches_high >= min_touches
+
+
 def check_breakout_confirmation(closed, range_high, range_low, mavol_period, vol_multiplier):
     """
     驗證「最新連續三根K線」是不是真的確認站穩在指定區間(range_low,
@@ -562,9 +586,14 @@ def get_pattern_matches_for_interval(session, interval, candidates, config, now_
         )
         if triangle_window is not None:
             high, low = get_triangle_apex_range(closed, triangle_window)
+            touched_low, touched_high = get_triangle_touched_sides(
+                closed, triangle_window, config["triangle_min_touches"],
+                config["triangle_touch_tolerance_pct"], config["triangle_pivot_span"],
+            )
             matches.append({
                 "symbol": symbol, "base": base_currency, "pattern_type": "triangle",
                 "window": triangle_window, "range_high": high, "range_low": low,
+                "touched_low": touched_low, "touched_high": touched_high,
             })
 
         consolidation = find_consolidation_range(
@@ -679,6 +708,8 @@ def main():
                     "window": m["window"],
                     "range_high": m["range_high"],
                     "range_low": m["range_low"],
+                    "touched_low": m.get("touched_low"),
+                    "touched_high": m.get("touched_high"),
                 }
             else:
                 watchlist[key] = {
@@ -689,6 +720,8 @@ def main():
                     "window": m["window"],
                     "range_high": m["range_high"],
                     "range_low": m["range_low"],
+                    "touched_low": m.get("touched_low"),
+                    "touched_high": m.get("touched_high"),
                     "added_ms": now_ms,
                     "fail_count": 0,
                 }
@@ -723,6 +756,27 @@ def main():
                 closed_1h, entry["range_high"], entry["range_low"],
                 config["mavol_period"], config["breakout_vol_multiplier"],
             )
+
+            if direction is not None and entry["pattern_type"] == "triangle":
+                # 三角收斂:突破/跌破的方向要跟「摸到 >=3 個點的那一邊趨勢線」
+                # 一致,才算真正確認。例如要算突破,壓力線(上方)本身就要
+                # 摸到足夠的點;要算跌破,支撐線(下方)本身要摸到足夠的點。
+                side_ok = (
+                    (direction == "breakout" and entry.get("touched_high"))
+                    or (direction == "breakdown" and entry.get("touched_low"))
+                )
+                if not side_ok:
+                    action_label = "突破" if direction == "breakout" else "跌破"
+                    print(
+                        f"[1H驗證] {entry['base']} 雖然出現{action_label}訊號,"
+                        f"但摸到足夠點數的趨勢線不是{action_label}的那一邊,不算數,"
+                        f"視為一次失敗,重新追蹤 {config['watchlist_max_age_hours']} 小時"
+                    )
+                    entry["fail_count"] = entry.get("fail_count", 0) + 1
+                    entry["added_ms"] = now_ms
+                    watchlist[key] = entry
+                    continue  # 已經計為一次失敗,這輪不用再檢查折返
+
             if direction is not None:
                 confirmed_events.append({
                     "base": entry["base"],
