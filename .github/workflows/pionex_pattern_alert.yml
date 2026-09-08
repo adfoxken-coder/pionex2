@@ -44,4 +44,3 @@ jobs:
           git diff --staged --quiet || git commit -m "Update pattern state [skip ci]"
           git pull --rebase origin main
           git push
-
