@@ -72,6 +72,11 @@ DEFAULT_CONFIG = {
     "breakout_vol_multiplier": 1.5,      # 1H 確認突破/跌破:成交量需超過 MAVOL 的倍數
     "lookback_candles": 200,             # 4H/1D 每次往前抓的K線根數上限
     "min_pattern_window": 6,             # 盤整狀態最少要幾根K線才算數
+    "double_pattern_max_height_diff_pct": 0.05,  # M頂/W底:兩個頭(底)的最高(低)價最多可以相差的比例
+    "double_pattern_min_pivot_gap": 5,           # M頂/W底:左右兩個頭(底)之間至少要隔幾根K線
+    "double_pattern_min_depth_pct": 0.03,        # M頂/W底:中間的頸線要比兩個頭(底)低(高)出至少這個比例,確保是真的M/W型態
+    "double_pattern_max_recency_candles": 30,    # M頂/W底:右邊的頭(底)要在最近幾根K線內出現,太久以前的不算數
+    "double_pattern_pivot_span": 2,              # M頂/W底判斷樞紐高/低點時,左右各比較幾根K線
     "watchlist_max_age_hours": 120,      # 追蹤名單裡的標的,超過這個時數還沒驗證出結果就自動移除
     "request_sleep_sec": 0.15,           # 每次呼叫 klines API 之間的間隔,避免超過速率限制
     "settle_delay_sec": 45,              # 排程一開始先等待幾秒,確保交易所該收盤的K線已經寫入完成
@@ -117,6 +122,8 @@ INTERVAL_LABELS = {
 PATTERN_TYPE_NAMES = {
     "triangle": "三角收斂",
     "consolidation": "盤整",
+    "m_top": "M頂",
+    "w_bottom": "W底",
 }
 
 REFERENCE_SYMBOL = "BTC_USDT_PERP"  # 用來偵測「各週期K線是否有新的一根收盤」的參考幣種
@@ -479,6 +486,110 @@ def get_triangle_touched_sides(closed, window, min_touches, touch_tolerance_pct,
     return touches_low >= min_touches, touches_high >= min_touches
 
 
+def find_double_top(closed, config):
+    """
+    在 closed(已限制在 lookback_candles 範圍內)裡找 M頂(雙頂):
+      - 找出所有樞紐高點,取「最新的一個」當右邊頭,必須夠新(在最近
+        double_pattern_max_recency_candles 根K線內)
+      - 往前找一個「左邊頭」,要求左邊頭 > 右邊頭,兩者最高價相差
+        <= double_pattern_max_height_diff_pct(預設5%),且兩個頭之間
+        至少要隔 double_pattern_min_pivot_gap 根K線
+      - 兩個頭之間的最低點(頸線)要比較低的那個頭低出至少
+        double_pattern_min_depth_pct,確保是真的凹下去的M字型,不是
+        隨便兩個差不多高的雜訊
+    回傳 dict 或 None。
+    """
+    span = config["double_pattern_pivot_span"]
+    pivot_highs = find_pivots(closed, "high", span)
+    if len(pivot_highs) < 2:
+        return None
+
+    min_gap = config["double_pattern_min_pivot_gap"]
+    max_diff = config["double_pattern_max_height_diff_pct"]
+    min_depth = config["double_pattern_min_depth_pct"]
+    max_recency = config["double_pattern_max_recency_candles"]
+
+    right_idx, right_high = pivot_highs[-1]
+    if (len(closed) - 1 - right_idx) > max_recency:
+        return None  # 右邊頭太舊了,不是現在正在發生的型態
+
+    for left_idx, left_high in reversed(pivot_highs[:-1]):
+        if right_idx - left_idx < min_gap:
+            continue
+        if left_high <= right_high:
+            continue  # 左邊頭必須比右邊頭高
+        diff_pct = (left_high - right_high) / left_high
+        if diff_pct > max_diff:
+            continue
+
+        between = closed[left_idx + 1:right_idx]
+        if not between:
+            continue
+        neckline = min(float(k["low"]) for k in between)
+        lower_peak = min(left_high, right_high)
+        if neckline > lower_peak * (1 - min_depth):
+            continue  # 中間沒有明顯凹下去,不算真的M字型
+
+        return {
+            "left_idx": left_idx, "right_idx": right_idx,
+            "left_high": left_high, "right_high": right_high,
+            "neckline": neckline,
+        }
+
+    return None
+
+
+def find_double_bottom(closed, config):
+    """
+    在 closed(已限制在 lookback_candles 範圍內)裡找 W底(雙底):
+      - 找出所有樞紐低點,取「最新的一個」當右邊底,必須夠新
+      - 往前找一個「左邊底」,要求右邊底 > 左邊底,兩者最低價相差
+        <= double_pattern_max_height_diff_pct,且兩個底之間至少要隔
+        double_pattern_min_pivot_gap 根K線
+      - 兩個底之間的最高點(頸線)要比較高的那個底高出至少
+        double_pattern_min_depth_pct,確保是真的凸起來的W字型
+    回傳 dict 或 None。
+    """
+    span = config["double_pattern_pivot_span"]
+    pivot_lows = find_pivots(closed, "low", span)
+    if len(pivot_lows) < 2:
+        return None
+
+    min_gap = config["double_pattern_min_pivot_gap"]
+    max_diff = config["double_pattern_max_height_diff_pct"]
+    min_depth = config["double_pattern_min_depth_pct"]
+    max_recency = config["double_pattern_max_recency_candles"]
+
+    right_idx, right_low = pivot_lows[-1]
+    if (len(closed) - 1 - right_idx) > max_recency:
+        return None
+
+    for left_idx, left_low in reversed(pivot_lows[:-1]):
+        if right_idx - left_idx < min_gap:
+            continue
+        if right_low <= left_low:
+            continue  # 右邊底必須比左邊底高
+        diff_pct = (right_low - left_low) / right_low
+        if diff_pct > max_diff:
+            continue
+
+        between = closed[left_idx + 1:right_idx]
+        if not between:
+            continue
+        neckline = max(float(k["high"]) for k in between)
+        higher_trough = max(left_low, right_low)
+        if neckline < higher_trough * (1 + min_depth):
+            continue  # 中間沒有明顯凸起來,不算真的W字型
+
+        return {
+            "left_idx": left_idx, "right_idx": right_idx,
+            "left_low": left_low, "right_low": right_low,
+            "neckline": neckline,
+        }
+
+    return None
+
+
 def check_breakout_confirmation(closed, range_high, range_low, mavol_period, vol_multiplier):
     """
     驗證「最新連續三根K線」是不是真的確認站穩在指定區間(range_low,
@@ -605,6 +716,29 @@ def get_pattern_matches_for_interval(session, interval, candidates, config, now_
                 "symbol": symbol, "base": base_currency, "pattern_type": "consolidation",
                 "window": consolidation["window"],
                 "range_high": consolidation["high"], "range_low": consolidation["low"],
+            })
+
+        # M頂/W底只看最近 lookback_candles 根,跟三角收斂/盤整用同一個範圍
+        double_pattern_segment = closed[-config["lookback_candles"]:]
+
+        m_top = find_double_top(double_pattern_segment, config)
+        if m_top is not None:
+            window = m_top["right_idx"] - m_top["left_idx"]
+            matches.append({
+                "symbol": symbol, "base": base_currency, "pattern_type": "m_top",
+                "window": window,
+                "range_high": max(m_top["left_high"], m_top["right_high"]),
+                "range_low": m_top["neckline"],
+            })
+
+        w_bottom = find_double_bottom(double_pattern_segment, config)
+        if w_bottom is not None:
+            window = w_bottom["right_idx"] - w_bottom["left_idx"]
+            matches.append({
+                "symbol": symbol, "base": base_currency, "pattern_type": "w_bottom",
+                "window": window,
+                "range_high": w_bottom["neckline"],
+                "range_low": min(w_bottom["left_low"], w_bottom["right_low"]),
             })
 
     return matches
@@ -757,20 +891,33 @@ def main():
                 config["mavol_period"], config["breakout_vol_multiplier"],
             )
 
-            if direction is not None and entry["pattern_type"] == "triangle":
-                # 三角收斂:突破/跌破的方向要跟「摸到 >=3 個點的那一邊趨勢線」
-                # 一致,才算真正確認。例如要算突破,壓力線(上方)本身就要
-                # 摸到足夠的點;要算跌破,支撐線(下方)本身要摸到足夠的點。
-                side_ok = (
-                    (direction == "breakout" and entry.get("touched_high"))
-                    or (direction == "breakdown" and entry.get("touched_low"))
-                )
-                if not side_ok:
+            if direction is not None:
+                pattern_type = entry["pattern_type"]
+                mismatch_reason = None
+
+                if pattern_type == "triangle":
+                    # 三角收斂:突破/跌破的方向要跟「摸到 >=3 個點的那一邊
+                    # 趨勢線」一致,才算真正確認。
+                    side_ok = (
+                        (direction == "breakout" and entry.get("touched_high"))
+                        or (direction == "breakdown" and entry.get("touched_low"))
+                    )
+                    if not side_ok:
+                        mismatch_reason = "摸到足夠點數的趨勢線不是同一邊"
+                elif pattern_type == "m_top":
+                    # M頂只看跌破頸線,不算突破訊號(那代表M頂假設已經失效)
+                    if direction != "breakdown":
+                        mismatch_reason = "M頂只認跌破頸線,不是這次的突破訊號"
+                elif pattern_type == "w_bottom":
+                    # W底只看突破頸線,不算跌破訊號
+                    if direction != "breakout":
+                        mismatch_reason = "W底只認突破頸線,不是這次的跌破訊號"
+
+                if mismatch_reason is not None:
                     action_label = "突破" if direction == "breakout" else "跌破"
                     print(
-                        f"[1H驗證] {entry['base']} 雖然出現{action_label}訊號,"
-                        f"但摸到足夠點數的趨勢線不是{action_label}的那一邊,不算數,"
-                        f"視為一次失敗,重新追蹤 {config['watchlist_max_age_hours']} 小時"
+                        f"[1H驗證] {entry['base']} 雖然出現{action_label}訊號,但{mismatch_reason},"
+                        f"不算數,視為一次失敗,重新追蹤 {config['watchlist_max_age_hours']} 小時"
                     )
                     entry["fail_count"] = entry.get("fail_count", 0) + 1
                     entry["added_ms"] = now_ms
