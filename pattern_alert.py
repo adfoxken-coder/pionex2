@@ -93,6 +93,7 @@ DEFAULT_CONFIG = {
         "SNDKX", "USOX", "BRENTOIL",
         "QCOMX", "GLWX", "VVV", "SHAZX", "SMHX",
         "COHRX", "CRWVX", "FLNCX", "IRENX", "OKLOX", "PAYPX", "SMCIX",
+        "ANTHROPIC", "ORCLX",
         "PPLTX", "XAU", "XAG", "XPT", "XPD", "PAXG", "XAUT",
     ],
     "excluded_stablecoin_bases": [
