@@ -1,8 +1,8 @@
 {
-  "last_60m_boundary_ms": 1788829200000,
+  "last_60m_boundary_ms": 1788832800000,
   "last_4h_boundary_ms": 1788811200000,
   "last_1d_boundary_ms": 1788739200000,
-  "last_run_utc": "2026-09-08T02:52:41.435520+00:00",
+  "last_run_utc": "2026-09-08T03:14:16.985125+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -443,8 +443,8 @@
       "window": 40,
       "range_high": 527.73,
       "range_low": 520.79,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788837211038,
+      "fail_count": 1
     },
     "DELLX_USDT_PERP|4H|consolidation": {
       "symbol": "DELLX_USDT_PERP",
@@ -454,8 +454,8 @@
       "window": 20,
       "range_high": 527.73,
       "range_low": 517.02,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788837211038,
+      "fail_count": 1
     },
     "DOS_USDT_PERP|4H|triangle": {
       "symbol": "DOS_USDT_PERP",
@@ -905,8 +905,8 @@
       "window": 8,
       "range_high": 1046.65,
       "range_low": 1017.61,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788837211038,
+      "fail_count": 1
     },
     "NATGAS_USDT_PERP|4H|triangle": {
       "symbol": "NATGAS_USDT_PERP",
@@ -1015,8 +1015,8 @@
       "window": 28,
       "range_high": 38.34,
       "range_low": 37.8,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788837211038,
+      "fail_count": 1
     },
     "NVDLX_USDT_PERP|4H|consolidation": {
       "symbol": "NVDLX_USDT_PERP",
@@ -1026,8 +1026,8 @@
       "window": 20,
       "range_high": 38.34,
       "range_low": 37.42,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788837211038,
+      "fail_count": 1
     },
     "ONDSX_USDT_PERP|4H|triangle": {
       "symbol": "ONDSX_USDT_PERP",
@@ -2269,8 +2269,8 @@
       "window": 116,
       "range_high": 0.4803,
       "range_low": 0.2933,
-      "added_ms": 1788825728044,
-      "fail_count": 0
+      "added_ms": 1788837211038,
+      "fail_count": 1
     },
     "XLM_USDT_PERP|1D|triangle": {
       "symbol": "XLM_USDT_PERP",
