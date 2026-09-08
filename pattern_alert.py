@@ -91,6 +91,7 @@ DEFAULT_CONFIG = {
         "TQQQX", "DFDVX", "ASMLX",
         "AAOIX", "AXTIX", "CXMTX", "DRAMX", "SKHX",
         "SNDKX", "USOX", "BRENTOIL",
+        "QCOMX", "GLWX", "VVV", "SHAZX", "SMHX",
         "PPLTX", "XAU", "XAG", "XPT", "XPD", "PAXG", "XAUT",
     ],
     "excluded_stablecoin_bases": [
