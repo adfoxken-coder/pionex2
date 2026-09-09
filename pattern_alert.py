@@ -77,9 +77,9 @@ DEFAULT_CONFIG = {
     "breakout_vol_multiplier": 1.5,      # 1H 確認突破/跌破:成交量需超過 MAVOL 的倍數
     "lookback_candles": 200,             # 4H/1D 每次往前抓的K線根數上限
     "min_pattern_window": 6,             # 盤整狀態最少要幾根K線才算數
-    "double_pattern_max_height_diff_pct": 0.05,  # M頂/W底:兩個頭(底)的最高(低)價最多可以相差的比例
-    "double_pattern_min_pivot_gap": 5,           # M頂/W底:左右兩個頭(底)之間至少要隔幾根K線
-    "double_pattern_min_depth_pct": 0.03,        # M頂/W底:中間的頸線要比兩個頭(底)低(高)出至少這個比例,確保是真的M/W型態
+    "double_pattern_min_pivot_gap": 20,          # M頂/W底:左右兩個頭(底)之間至少要隔幾根K線(不論4H或日線都一樣),太近就是雜訊
+    "m_top_min_depth_pct": 0.03,          # M頂:左邊頭跟頸線的高低差至少要達到這個比例
+    "w_bottom_min_depth_pct": 0.05,       # W底:頸線跟左邊底的高低差至少要達到這個比例
     "double_pattern_max_recency_candles": 30,    # M頂/W底:右邊的頭(底)要在最近幾根K線內出現,太久以前的不算數
     "double_pattern_pivot_span": 2,              # M頂/W底判斷樞紐高/低點時,左右各比較幾根K線
     "watchlist_max_age_hours": 120,      # 追蹤名單裡的標的,超過這個時數還沒驗證出結果就自動移除
@@ -538,12 +538,12 @@ def find_double_top(closed, config):
     在 closed(已限制在 lookback_candles 範圍內)裡找 M頂(雙頂):
       - 找出所有樞紐高點,取"最新的一個"當右邊頭,必須夠新(在最近
         double_pattern_max_recency_candles 根K線內)
-      - 往前找一個"左邊頭",要求左邊頭 > 右邊頭,兩者最高價相差
-        <= double_pattern_max_height_diff_pct(預設5%),且兩個頭之間
-        至少要隔 double_pattern_min_pivot_gap 根K線
-      - 兩個頭之間的最低點(頸線)要比較低的那個頭低出至少
-        double_pattern_min_depth_pct,確保是真的凹下去的M字型,不是
-        隨便兩個差不多高的雜訊
+      - 往前找一個"左邊頭",只要求左邊頭 > 右邊頭即可(不設上限),且
+        兩個頭之間至少要隔 double_pattern_min_pivot_gap 根K線
+      - 左邊頭跟頸線的高低差至少要 m_top_min_depth_pct(預設3%),確保是
+        真的凹下去的M字型,不是隨便兩個差不多高的雜訊
+      - 右邊頭的價位必須高於(頸線 + 左邊頭)/2 這個中點,確保第二個頭
+        夠高,不是隨便一個弱反彈就被當成M頂
     回傳 dict 或 None。
     """
     span = config["double_pattern_pivot_span"]
@@ -552,8 +552,7 @@ def find_double_top(closed, config):
         return None
 
     min_gap = config["double_pattern_min_pivot_gap"]
-    max_diff = config["double_pattern_max_height_diff_pct"]
-    min_depth = config["double_pattern_min_depth_pct"]
+    min_depth = config["m_top_min_depth_pct"]
     max_recency = config["double_pattern_max_recency_candles"]
 
     right_idx, right_high = pivot_highs[-1]
@@ -564,18 +563,19 @@ def find_double_top(closed, config):
         if right_idx - left_idx < min_gap:
             continue
         if left_high <= right_high:
-            continue  # 左邊頭必須比右邊頭高
-        diff_pct = (left_high - right_high) / left_high
-        if diff_pct > max_diff:
-            continue
+            continue  # 左邊頭必須比右邊頭高,不設上限
 
         between = closed[left_idx + 1:right_idx]
         if not between:
             continue
         neckline = min(float(k["low"]) for k in between)
-        lower_peak = min(left_high, right_high)
-        if neckline > lower_peak * (1 - min_depth):
-            continue  # 中間沒有明顯凹下去,不算真的M字型
+        depth_pct = (left_high - neckline) / left_high
+        if depth_pct < min_depth:
+            continue  # 左邊頭跟頸線高低差不夠,中間沒有明顯凹下去,不算真的M字型
+
+        midpoint = (neckline + left_high) / 2
+        if right_high <= midpoint:
+            continue  # 右邊頭太弱了,沒有站在頸線跟左邊頭的中點之上
 
         return {
             "left_idx": left_idx, "right_idx": right_idx,
@@ -590,11 +590,12 @@ def find_double_bottom(closed, config):
     """
     在 closed(已限制在 lookback_candles 範圍內)裡找 W底(雙底):
       - 找出所有樞紐低點,取"最新的一個"當右邊底,必須夠新
-      - 往前找一個"左邊底",要求右邊底 > 左邊底,兩者最低價相差
-        <= double_pattern_max_height_diff_pct,且兩個底之間至少要隔
-        double_pattern_min_pivot_gap 根K線
-      - 兩個底之間的最高點(頸線)要比較高的那個底高出至少
-        double_pattern_min_depth_pct,確保是真的凸起來的W字型
+      - 往前找一個"左邊底",只要求右邊底 > 左邊底即可(不設上限),且
+        兩個底之間至少要隔 double_pattern_min_pivot_gap 根K線
+      - 左邊底跟頸線的高低差至少要 w_bottom_min_depth_pct,確保是
+        真的凸起來的W字型
+      - 右邊底的價位必須低於(頸線 + 左邊底)/2 這個中點,確保第二個底
+        夠深,不是隨便碰一下就反彈的弱底
     回傳 dict 或 None。
     """
     span = config["double_pattern_pivot_span"]
@@ -603,8 +604,7 @@ def find_double_bottom(closed, config):
         return None
 
     min_gap = config["double_pattern_min_pivot_gap"]
-    max_diff = config["double_pattern_max_height_diff_pct"]
-    min_depth = config["double_pattern_min_depth_pct"]
+    min_depth = config["w_bottom_min_depth_pct"]
     max_recency = config["double_pattern_max_recency_candles"]
 
     right_idx, right_low = pivot_lows[-1]
@@ -615,18 +615,19 @@ def find_double_bottom(closed, config):
         if right_idx - left_idx < min_gap:
             continue
         if right_low <= left_low:
-            continue  # 右邊底必須比左邊底高
-        diff_pct = (right_low - left_low) / right_low
-        if diff_pct > max_diff:
-            continue
+            continue  # 右邊底必須比左邊底高,不設上限
 
         between = closed[left_idx + 1:right_idx]
         if not between:
             continue
         neckline = max(float(k["high"]) for k in between)
-        higher_trough = max(left_low, right_low)
-        if neckline < higher_trough * (1 + min_depth):
-            continue  # 中間沒有明顯凸起來,不算真的W字型
+        depth_pct = (neckline - left_low) / left_low
+        if depth_pct < min_depth:
+            continue  # 左邊底跟頸線高低差不夠,中間沒有明顯凸起來,不算真的W字型
+
+        midpoint = (neckline + left_low) / 2
+        if right_low >= midpoint:
+            continue  # 右邊底太弱了,沒有站在頸線跟左邊底的中點之下
 
         return {
             "left_idx": left_idx, "right_idx": right_idx,
