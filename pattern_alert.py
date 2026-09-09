@@ -78,8 +78,9 @@ DEFAULT_CONFIG = {
     "lookback_candles": 200,             # 4H/1D 每次往前抓的K線根數上限
     "min_pattern_window": 6,             # 盤整狀態最少要幾根K線才算數
     "double_pattern_min_pivot_gap": 20,          # M頂/W底:左右兩個頭(底)之間至少要隔幾根K線(不論4H或日線都一樣),太近就是雜訊
-    "m_top_min_depth_pct": 0.03,          # M頂:左邊頭跟頸線的高低差至少要達到這個比例
-    "w_bottom_min_depth_pct": 0.05,       # W底:頸線跟左邊底的高低差至少要達到這個比例
+    "double_pattern_left_min_depth_pct": 0.05,   # M頂/W底:左邊頭(底)跟頸線的高低差至少要達到這個比例
+    "double_pattern_right_min_depth_pct": 0.03,  # M頂/W底:右邊頭(底)跟頸線的高低差至少要達到這個比例(比左邊寬鬆,但仍有下限)
+    "double_pattern_pre_entry_min_diff_pct": 0.03,  # M頂/W底:進入左邊頭(底)之前,最近一個轉折點跟頸線的高低差至少要達到這個比例,確保左邊真的是明顯轉折
     "double_pattern_max_recency_candles": 30,    # M頂/W底:右邊的頭(底)要在最近幾根K線內出現,太久以前的不算數
     "double_pattern_pivot_span": 2,              # M頂/W底判斷樞紐高/低點時,左右各比較幾根K線
     "watchlist_max_age_hours": 120,      # 追蹤名單裡的標的,超過這個時數還沒驗證出結果就自動移除
@@ -533,6 +534,20 @@ def get_triangle_touched_sides(closed, window, min_touches, touch_tolerance_pct,
     return touches_low >= min_touches, touches_high >= min_touches
 
 
+def find_nearest_pivot_before(pivots, idx):
+    """
+    在樞紐點清單裡,找出index小於idx、且最接近idx的那一個樞紐點(也就是
+    "進入這個轉折點之前,最近的一個轉折點")。回傳 (index, price) 或 None。
+    """
+    candidate = None
+    for p_idx, p_val in pivots:
+        if p_idx < idx:
+            candidate = (p_idx, p_val)
+        else:
+            break
+    return candidate
+
+
 def find_double_top(closed, config):
     """
     在 closed(已限制在 lookback_candles 範圍內)裡找 M頂(雙頂):
@@ -540,19 +555,25 @@ def find_double_top(closed, config):
         double_pattern_max_recency_candles 根K線內)
       - 往前找一個"左邊頭",只要求左邊頭 > 右邊頭即可(不設上限),且
         兩個頭之間至少要隔 double_pattern_min_pivot_gap 根K線
-      - 左邊頭跟頸線的高低差至少要 m_top_min_depth_pct(預設3%),確保是
-        真的凹下去的M字型,不是隨便兩個差不多高的雜訊
-      - 右邊頭的價位必須高於(頸線 + 左邊頭)/2 這個中點,確保第二個頭
-        夠高,不是隨便一個弱反彈就被當成M頂
+      - 左邊頭跟頸線的高低差至少要 double_pattern_left_min_depth_pct
+        (預設5%),確保是真的凹下去的M字型,不是隨便兩個差不多高的雜訊
+      - 右邊頭跟頸線的高低差至少要 double_pattern_right_min_depth_pct
+        (預設3%,比左邊寬鬆但仍有下限),確保右邊頭不是弱到幾乎貼著頸線
+      - 進入左邊頭之前,最近的那個轉折低點(D)跟頸線的高低差至少要
+        double_pattern_pre_entry_min_diff_pct(預設3%),確保左邊頭真的是
+        從一個明顯的轉折點漲上來的,不是隨便盤整中的小雜訊
     回傳 dict 或 None。
     """
     span = config["double_pattern_pivot_span"]
     pivot_highs = find_pivots(closed, "high", span)
     if len(pivot_highs) < 2:
         return None
+    pivot_lows = find_pivots(closed, "low", span)
 
     min_gap = config["double_pattern_min_pivot_gap"]
-    min_depth = config["m_top_min_depth_pct"]
+    left_min_depth = config["double_pattern_left_min_depth_pct"]
+    right_min_depth = config["double_pattern_right_min_depth_pct"]
+    pre_entry_min_diff = config["double_pattern_pre_entry_min_diff_pct"]
     max_recency = config["double_pattern_max_recency_candles"]
 
     right_idx, right_high = pivot_highs[-1]
@@ -569,13 +590,22 @@ def find_double_top(closed, config):
         if not between:
             continue
         neckline = min(float(k["low"]) for k in between)
-        depth_pct = (left_high - neckline) / left_high
-        if depth_pct < min_depth:
+
+        left_depth_pct = (left_high - neckline) / left_high
+        if left_depth_pct < left_min_depth:
             continue  # 左邊頭跟頸線高低差不夠,中間沒有明顯凹下去,不算真的M字型
 
-        midpoint = (neckline + left_high) / 2
-        if right_high <= midpoint:
-            continue  # 右邊頭太弱了,沒有站在頸線跟左邊頭的中點之上
+        right_depth_pct = (right_high - neckline) / left_high
+        if right_depth_pct < right_min_depth:
+            continue  # 右邊頭跟頸線高低差不夠,右邊太弱了
+
+        pre_entry = find_nearest_pivot_before(pivot_lows, left_idx)
+        if pre_entry is None:
+            continue  # 找不到進場前的參考低點,資料不足,跳過
+        _, pre_entry_low = pre_entry
+        pre_entry_diff_pct = abs(pre_entry_low - neckline) / neckline
+        if pre_entry_diff_pct < pre_entry_min_diff:
+            continue  # 進場前的參考低點跟頸線太接近,左邊頭不是真的明顯轉折
 
         return {
             "left_idx": left_idx, "right_idx": right_idx,
@@ -592,19 +622,25 @@ def find_double_bottom(closed, config):
       - 找出所有樞紐低點,取"最新的一個"當右邊底,必須夠新
       - 往前找一個"左邊底",只要求右邊底 > 左邊底即可(不設上限),且
         兩個底之間至少要隔 double_pattern_min_pivot_gap 根K線
-      - 左邊底跟頸線的高低差至少要 w_bottom_min_depth_pct,確保是
-        真的凸起來的W字型
-      - 右邊底的價位必須低於(頸線 + 左邊底)/2 這個中點,確保第二個底
-        夠深,不是隨便碰一下就反彈的弱底
+      - 左邊底跟頸線的高低差至少要 double_pattern_left_min_depth_pct
+        (預設5%),確保是真的凸起來的W字型
+      - 右邊底跟頸線的高低差至少要 double_pattern_right_min_depth_pct
+        (預設3%,比左邊寬鬆但仍有下限),確保右邊底不是弱到幾乎貼著頸線
+      - 進入左邊底之前,最近的那個轉折高點(A)跟頸線的高低差至少要
+        double_pattern_pre_entry_min_diff_pct(預設3%),確保左邊底真的是
+        從一個明顯的轉折點跌下來的,不是隨便盤整中的小雜訊
     回傳 dict 或 None。
     """
     span = config["double_pattern_pivot_span"]
     pivot_lows = find_pivots(closed, "low", span)
     if len(pivot_lows) < 2:
         return None
+    pivot_highs = find_pivots(closed, "high", span)
 
     min_gap = config["double_pattern_min_pivot_gap"]
-    min_depth = config["w_bottom_min_depth_pct"]
+    left_min_depth = config["double_pattern_left_min_depth_pct"]
+    right_min_depth = config["double_pattern_right_min_depth_pct"]
+    pre_entry_min_diff = config["double_pattern_pre_entry_min_diff_pct"]
     max_recency = config["double_pattern_max_recency_candles"]
 
     right_idx, right_low = pivot_lows[-1]
@@ -621,13 +657,22 @@ def find_double_bottom(closed, config):
         if not between:
             continue
         neckline = max(float(k["high"]) for k in between)
-        depth_pct = (neckline - left_low) / left_low
-        if depth_pct < min_depth:
+
+        left_depth_pct = (neckline - left_low) / left_low
+        if left_depth_pct < left_min_depth:
             continue  # 左邊底跟頸線高低差不夠,中間沒有明顯凸起來,不算真的W字型
 
-        midpoint = (neckline + left_low) / 2
-        if right_low >= midpoint:
-            continue  # 右邊底太弱了,沒有站在頸線跟左邊底的中點之下
+        right_depth_pct = (neckline - right_low) / left_low
+        if right_depth_pct < right_min_depth:
+            continue  # 右邊底跟頸線高低差不夠,右邊太弱了
+
+        pre_entry = find_nearest_pivot_before(pivot_highs, left_idx)
+        if pre_entry is None:
+            continue  # 找不到進場前的參考高點,資料不足,跳過
+        _, pre_entry_high = pre_entry
+        pre_entry_diff_pct = abs(pre_entry_high - neckline) / neckline
+        if pre_entry_diff_pct < pre_entry_min_diff:
+            continue  # 進場前的參考高點跟頸線太接近,左邊底不是真的明顯轉折
 
         return {
             "left_idx": left_idx, "right_idx": right_idx,
