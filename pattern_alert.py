@@ -77,10 +77,12 @@ DEFAULT_CONFIG = {
     "breakout_vol_multiplier": 1.5,      # 1H 確認突破/跌破:成交量需超過 MAVOL 的倍數
     "lookback_candles": 200,             # 4H/1D 每次往前抓的K線根數上限
     "min_pattern_window": 6,             # 盤整狀態最少要幾根K線才算數
-    "double_pattern_min_pivot_gap": 20,          # M頂/W底:左右兩個頭(底)之間至少要隔幾根K線(不論4H或日線都一樣),太近就是雜訊
+    "double_pattern_min_pivot_gap": 80,          # M頂/W底:整個型態(左右兩個頭/底之間)至少要由這麼多根K線組成(不論4H或日線都一樣),太短就是雜訊
     "double_pattern_left_min_depth_pct": 0.05,   # M頂/W底:左邊頭(底)跟頸線的高低差至少要達到這個比例
     "double_pattern_right_min_depth_pct": 0.03,  # M頂/W底:右邊頭(底)跟頸線的高低差至少要達到這個比例(比左邊寬鬆,但仍有下限)
     "double_pattern_pre_entry_min_diff_pct": 0.03,  # M頂/W底:進入左邊頭(底)之前,最近一個轉折點跟頸線的高低差至少要達到這個比例,確保左邊真的是明顯轉折
+    "double_pattern_pivot_confirm_tolerance_pct": 0.10,  # M頂/W底:頭/底左右各兩根相鄰K線的最高(低)價,跟頭/底本身相差不能超過這個比例
+    "double_pattern_max_wick_ratio": 0.60,       # M頂/W底:頭/底那根K線的影線(上影線給頭、下影線給底)不能超過整根K線(高-低)的這個比例,避免插針
     "double_pattern_max_recency_candles": 30,    # M頂/W底:右邊的頭(底)要在最近幾根K線內出現,太久以前的不算數
     "double_pattern_pivot_span": 2,              # M頂/W底判斷樞紐高/低點時,左右各比較幾根K線
     "watchlist_max_age_hours": 120,      # 追蹤名單裡的標的,超過這個時數還沒驗證出結果就自動移除
@@ -548,6 +550,52 @@ def find_nearest_pivot_before(pivots, idx):
     return candidate
 
 
+def is_pivot_confirmed(closed, idx, kind, tolerance_pct, max_wick_ratio):
+    """
+    驗證某個樞紐點(頭或底)是不是「真的」轉折,不是單根插針或長影線碰一下:
+      1. 這根K線本身的影線(上影線給M頭、下影線給W底)不能超過整根K線
+         (高-低)的 max_wick_ratio(預設60%),避免單根插針就被當成頭/底
+      2. 左右各兩根相鄰K線的最高價(kind="high")或最低價(kind="low"),
+         跟這個樞紐點的價位相差不能超過 tolerance_pct(預設10%),確保
+         頭/底附近有其他K線一起撐著,不是憑空一根衝出去又縮回來
+
+    回傳 True/False。
+    """
+    candle = closed[idx]
+    o = float(candle["open"])
+    h = float(candle["high"])
+    l = float(candle["low"])
+    c = float(candle["close"])
+    candle_range = h - l
+    if candle_range <= 0:
+        return False
+
+    if kind == "high":
+        extreme_val = h
+        wick = h - max(o, c)
+    else:
+        extreme_val = l
+        wick = min(o, c) - l
+
+    if extreme_val <= 0:
+        return False
+
+    wick_ratio = wick / candle_range
+    if wick_ratio > max_wick_ratio:
+        return False  # 插針或長影線,不算真的轉折
+
+    for n_idx in (idx - 2, idx - 1, idx + 1, idx + 2):
+        if n_idx < 0 or n_idx >= len(closed):
+            continue  # 超出資料範圍的鄰居就跳過,不強制要求
+        n_candle = closed[n_idx]
+        n_val = float(n_candle["high"]) if kind == "high" else float(n_candle["low"])
+        diff_pct = abs(extreme_val - n_val) / extreme_val
+        if diff_pct > tolerance_pct:
+            return False  # 附近K線差太多,這個頭/底太孤立,不算真的轉折
+
+    return True
+
+
 def find_double_top(closed, config):
     """
     在 closed(已限制在 lookback_candles 範圍內)裡找 M頂(雙頂):
@@ -562,6 +610,9 @@ def find_double_top(closed, config):
       - 進入左邊頭之前,最近的那個轉折低點(D)跟頸線的高低差至少要
         double_pattern_pre_entry_min_diff_pct(預設3%),確保左邊頭真的是
         從一個明顯的轉折點漲上來的,不是隨便盤整中的小雜訊
+      - 左邊頭、右邊頭都要通過 is_pivot_confirmed 檢查:不能是插針或長
+        影線(上影線不能超過整根K線60%),且左右各兩根相鄰K線的最高價
+        要在10%以內,確保是真的有撐住的頭,不是孤立的一根尖頭
     回傳 dict 或 None。
     """
     span = config["double_pattern_pivot_span"]
@@ -575,16 +626,24 @@ def find_double_top(closed, config):
     right_min_depth = config["double_pattern_right_min_depth_pct"]
     pre_entry_min_diff = config["double_pattern_pre_entry_min_diff_pct"]
     max_recency = config["double_pattern_max_recency_candles"]
+    tolerance_pct = config["double_pattern_pivot_confirm_tolerance_pct"]
+    max_wick_ratio = config["double_pattern_max_wick_ratio"]
 
     right_idx, right_high = pivot_highs[-1]
     if (len(closed) - 1 - right_idx) > max_recency:
         return None  # 右邊頭太舊了,不是現在正在發生的型態
+
+    if not is_pivot_confirmed(closed, right_idx, "high", tolerance_pct, max_wick_ratio):
+        return None  # 右邊頭是插針或太孤立,不算真的頭
 
     for left_idx, left_high in reversed(pivot_highs[:-1]):
         if right_idx - left_idx < min_gap:
             continue
         if left_high <= right_high:
             continue  # 左邊頭必須比右邊頭高,不設上限
+
+        if not is_pivot_confirmed(closed, left_idx, "high", tolerance_pct, max_wick_ratio):
+            continue  # 左邊頭是插針或太孤立,不算真的頭
 
         between = closed[left_idx + 1:right_idx]
         if not between:
@@ -629,6 +688,9 @@ def find_double_bottom(closed, config):
       - 進入左邊底之前,最近的那個轉折高點(A)跟頸線的高低差至少要
         double_pattern_pre_entry_min_diff_pct(預設3%),確保左邊底真的是
         從一個明顯的轉折點跌下來的,不是隨便盤整中的小雜訊
+      - 左邊底、右邊底都要通過 is_pivot_confirmed 檢查:不能是插針或長
+        影線(下影線不能超過整根K線60%),且左右各兩根相鄰K線的最低價
+        要在10%以內,確保是真的有撐住的底,不是孤立的一根尖底
     回傳 dict 或 None。
     """
     span = config["double_pattern_pivot_span"]
@@ -642,16 +704,24 @@ def find_double_bottom(closed, config):
     right_min_depth = config["double_pattern_right_min_depth_pct"]
     pre_entry_min_diff = config["double_pattern_pre_entry_min_diff_pct"]
     max_recency = config["double_pattern_max_recency_candles"]
+    tolerance_pct = config["double_pattern_pivot_confirm_tolerance_pct"]
+    max_wick_ratio = config["double_pattern_max_wick_ratio"]
 
     right_idx, right_low = pivot_lows[-1]
     if (len(closed) - 1 - right_idx) > max_recency:
         return None
+
+    if not is_pivot_confirmed(closed, right_idx, "low", tolerance_pct, max_wick_ratio):
+        return None  # 右邊底是插針或太孤立,不算真的底
 
     for left_idx, left_low in reversed(pivot_lows[:-1]):
         if right_idx - left_idx < min_gap:
             continue
         if right_low <= left_low:
             continue  # 右邊底必須比左邊底高,不設上限
+
+        if not is_pivot_confirmed(closed, left_idx, "low", tolerance_pct, max_wick_ratio):
+            continue  # 左邊底是插針或太孤立,不算真的底
 
         between = closed[left_idx + 1:right_idx]
         if not between:
