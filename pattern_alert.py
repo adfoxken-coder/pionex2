@@ -833,6 +833,18 @@ def main():
     state = load_json(STATE_FILE, {})
     watchlist = state.get("watchlist", {})
 
+    # 用最新的排除清單清理一次追蹤名單:如果某個標的是「先被加入追蹤名單,
+    # 後來才被加進排除清單」,不會自動被踢掉(排除清單原本只在重新掃描候選
+    # 幣種時生效),這裡主動補上這一步,避免已排除的標的繼續卡在追蹤名單裡
+    excluded_bases = {b.upper() for b in config.get("excluded_base_currencies", [])}
+    stale_keys = [
+        key for key, entry in watchlist.items()
+        if entry.get("base", "").upper() in excluded_bases
+    ]
+    for key in stale_keys:
+        print(f"[清理] {watchlist[key]['base']} 現在已在排除清單裡,從追蹤名單移除")
+        del watchlist[key]
+
     session = requests.Session()
 
     # 分別問 4H / 1D / 1H 各自"最新收盤那一根"是不是比上次記錄的更新
