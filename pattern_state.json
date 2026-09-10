@@ -1,8 +1,8 @@
 {
-  "last_60m_boundary_ms": 1789023600000,
+  "last_60m_boundary_ms": 1789027200000,
   "last_4h_boundary_ms": 1789012800000,
   "last_1d_boundary_ms": 1788912000000,
-  "last_run_utc": "2026-09-10T08:53:35.775924+00:00",
+  "last_run_utc": "2026-09-10T09:15:40.101902+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -305,8 +305,8 @@
       "window": 38,
       "range_high": 4.743,
       "range_low": 4.329,
-      "added_ms": 1789012904554,
-      "fail_count": 8
+      "added_ms": 1789031443609,
+      "fail_count": 9
     },
     "ETH_USDT_PERP|4H|consolidation": {
       "symbol": "ETH_USDT_PERP",
@@ -342,8 +342,8 @@
       "window": 24,
       "range_high": 0.12345,
       "range_low": 0.11828,
-      "added_ms": 1789010058633,
-      "fail_count": 9
+      "added_ms": 1789031443609,
+      "fail_count": 10
     },
     "GENIUS_USDT_PERP|4H|triangle": {
       "symbol": "GENIUS_USDT_PERP",
@@ -377,8 +377,8 @@
       "window": 200,
       "range_high": 0.02934,
       "range_low": 0.02311,
-      "added_ms": 1789010058633,
-      "fail_count": 4
+      "added_ms": 1789031443609,
+      "fail_count": 5
     },
     "HANA_USDT_PERP|4H|triangle": {
       "symbol": "HANA_USDT_PERP",
@@ -1383,8 +1383,8 @@
       "window": 74,
       "range_high": 0.02498,
       "range_low": 0.02291,
-      "added_ms": 1789023772179,
-      "fail_count": 4
+      "added_ms": 1789031443609,
+      "fail_count": 5
     },
     "XRP_USDT_PERP|4H|consolidation": {
       "symbol": "XRP_USDT_PERP",
@@ -1498,19 +1498,6 @@
       "range_low": 0.01135,
       "added_ms": 1788999781408,
       "fail_count": 5
-    },
-    "JUP_USDT_PERP|4H|triangle": {
-      "symbol": "JUP_USDT_PERP",
-      "base": "JUP",
-      "source_interval": "4H",
-      "pattern_type": "triangle",
-      "window": 22,
-      "range_high": 0.2538,
-      "range_low": 0.2348,
-      "added_ms": 1788880919216,
-      "fail_count": 1,
-      "touched_low": true,
-      "touched_high": true
     },
     "MOVR_USDT_PERP|4H|triangle": {
       "symbol": "MOVR_USDT_PERP",
@@ -1902,19 +1889,6 @@
       "added_ms": 1788905697731,
       "fail_count": 0
     },
-    "ARIA_USDT_PERP|4H|triangle": {
-      "symbol": "ARIA_USDT_PERP",
-      "base": "ARIA",
-      "source_interval": "4H",
-      "pattern_type": "triangle",
-      "window": 116,
-      "range_high": 0.03622,
-      "range_low": 0.03051,
-      "touched_low": true,
-      "touched_high": true,
-      "added_ms": 1788905697731,
-      "fail_count": 0
-    },
     "ARIA_USDT_PERP|4H|w_bottom": {
       "symbol": "ARIA_USDT_PERP",
       "base": "ARIA",
@@ -1925,8 +1899,8 @@
       "range_low": 0.033,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789003123789,
-      "fail_count": 1
+      "added_ms": 1789031443609,
+      "fail_count": 2
     },
     "ARKM_USDT_PERP|4H|m_top": {
       "symbol": "ARKM_USDT_PERP",
@@ -2224,8 +2198,8 @@
       "range_low": 0.01476,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789003123789,
-      "fail_count": 5
+      "added_ms": 1789031443609,
+      "fail_count": 6
     },
     "BIO_USDT_PERP|4H|m_top": {
       "symbol": "BIO_USDT_PERP",
@@ -3134,21 +3108,8 @@
       "range_low": 1.2691,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789010058633,
-      "fail_count": 7
-    },
-    "FARTCOIN_USDT_PERP|4H|m_top": {
-      "symbol": "FARTCOIN_USDT_PERP",
-      "base": "FARTCOIN",
-      "source_interval": "4H",
-      "pattern_type": "m_top",
-      "window": 81,
-      "range_high": 0.2184,
-      "range_low": 0.1534,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788938089387,
-      "fail_count": 1
+      "added_ms": 1789031443609,
+      "fail_count": 8
     },
     "FARTCOIN_USDT_PERP|4H|w_bottom": {
       "symbol": "FARTCOIN_USDT_PERP",
@@ -3160,8 +3121,8 @@
       "range_low": 0.1467,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1788905697731,
-      "fail_count": 0
+      "added_ms": 1789031443609,
+      "fail_count": 1
     },
     "FET_USDT_PERP|4H|w_bottom": {
       "symbol": "FET_USDT_PERP",
@@ -3186,8 +3147,8 @@
       "range_low": 0.11774,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789010058633,
-      "fail_count": 7
+      "added_ms": 1789031443609,
+      "fail_count": 8
     },
     "FHE_USDT_PERP|4H|m_top": {
       "symbol": "FHE_USDT_PERP",
@@ -4005,8 +3966,8 @@
       "range_low": 0.04645,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789023772179,
-      "fail_count": 1
+      "added_ms": 1789031443609,
+      "fail_count": 2
     },
     "LUNC_USDT_PERP|4H|m_top": {
       "symbol": "LUNC_USDT_PERP",
@@ -4811,8 +4772,8 @@
       "range_low": 0.01813,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1788905697731,
-      "fail_count": 0
+      "added_ms": 1789031443609,
+      "fail_count": 1
     },
     "PLAY_USDT_PERP|4H|m_top": {
       "symbol": "PLAY_USDT_PERP",
@@ -4967,8 +4928,8 @@
       "range_low": 0.1198,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789003123789,
-      "fail_count": 5
+      "added_ms": 1789031443609,
+      "fail_count": 6
     },
     "PROMPT_USDT_PERP|4H|w_bottom": {
       "symbol": "PROMPT_USDT_PERP",
@@ -4980,8 +4941,8 @@
       "range_low": 0.02245,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789023772179,
-      "fail_count": 3
+      "added_ms": 1789031443609,
+      "fail_count": 4
     },
     "PROS_USDT_PERP|4H|w_bottom": {
       "symbol": "PROS_USDT_PERP",
@@ -5214,8 +5175,8 @@
       "range_low": 0.00904,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789023772179,
-      "fail_count": 7
+      "added_ms": 1789031443609,
+      "fail_count": 8
     },
     "SAND_USDT_PERP|4H|m_top": {
       "symbol": "SAND_USDT_PERP",
@@ -5539,8 +5500,8 @@
       "range_low": 0.002129,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789003123789,
-      "fail_count": 6
+      "added_ms": 1789031443609,
+      "fail_count": 7
     },
     "TAKE_USDT_PERP|4H|w_bottom": {
       "symbol": "TAKE_USDT_PERP",
@@ -6010,32 +5971,6 @@
       "added_ms": 1788905697731,
       "fail_count": 0
     },
-    "XPIN_USDT_PERP|4H|triangle": {
-      "symbol": "XPIN_USDT_PERP",
-      "base": "XPIN",
-      "source_interval": "4H",
-      "pattern_type": "triangle",
-      "window": 200,
-      "range_high": 0.001154,
-      "range_low": 0.000949,
-      "touched_low": true,
-      "touched_high": true,
-      "added_ms": 1788905697731,
-      "fail_count": 0
-    },
-    "XPIN_USDT_PERP|4H|m_top": {
-      "symbol": "XPIN_USDT_PERP",
-      "base": "XPIN",
-      "source_interval": "4H",
-      "pattern_type": "m_top",
-      "window": 86,
-      "range_high": 0.00113,
-      "range_low": 0.000954,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788905697731,
-      "fail_count": 0
-    },
     "XPIN_USDT_PERP|4H|w_bottom": {
       "symbol": "XPIN_USDT_PERP",
       "base": "XPIN",
@@ -6371,8 +6306,8 @@
       "range_low": 0.4606,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1788930126644,
-      "fail_count": 1
+      "added_ms": 1789031443609,
+      "fail_count": 2
     },
     "币安人生_USDT_PERP|4H|w_bottom": {
       "symbol": "币安人生_USDT_PERP",
@@ -7346,8 +7281,8 @@
       "range_low": 0.01886,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789003123789,
-      "fail_count": 5
+      "added_ms": 1789031443609,
+      "fail_count": 6
     },
     "BIO_USDT_PERP|1D|m_top": {
       "symbol": "BIO_USDT_PERP",
@@ -8126,8 +8061,8 @@
       "range_low": 0.147,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1788913765892,
-      "fail_count": 0
+      "added_ms": 1789031443609,
+      "fail_count": 1
     },
     "FET_USDT_PERP|1D|m_top": {
       "symbol": "FET_USDT_PERP",
@@ -8646,8 +8581,8 @@
       "range_low": 0.02503,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789028285857,
-      "fail_count": 5
+      "added_ms": 1789031443609,
+      "fail_count": 6
     },
     "KAVA_USDT_PERP|1D|m_top": {
       "symbol": "KAVA_USDT_PERP",
@@ -9296,8 +9231,8 @@
       "range_low": 0.22095,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789012904554,
-      "fail_count": 5
+      "added_ms": 1789031443609,
+      "fail_count": 6
     },
     "OPN_USDT_PERP|1D|w_bottom": {
       "symbol": "OPN_USDT_PERP",
@@ -9530,8 +9465,8 @@
       "range_low": 0.03445,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789028285857,
-      "fail_count": 4
+      "added_ms": 1789031443609,
+      "fail_count": 5
     },
     "PLUME_USDT_PERP|1D|m_top": {
       "symbol": "PLUME_USDT_PERP",
@@ -9647,8 +9582,8 @@
       "range_low": 0.1194,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789003123789,
-      "fail_count": 4
+      "added_ms": 1789031443609,
+      "fail_count": 5
     },
     "PROMPT_USDT_PERP|1D|m_top": {
       "symbol": "PROMPT_USDT_PERP",
@@ -10622,8 +10557,8 @@
       "range_low": 0.0119,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1788992055089,
-      "fail_count": 3
+      "added_ms": 1789031443609,
+      "fail_count": 4
     },
     "XLM_USDT_PERP|1D|m_top": {
       "symbol": "XLM_USDT_PERP",
@@ -10661,8 +10596,8 @@
       "range_low": 0.000952,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1788913765892,
-      "fail_count": 0
+      "added_ms": 1789031443609,
+      "fail_count": 1
     },
     "XPL_USDT_PERP|1D|m_top": {
       "symbol": "XPL_USDT_PERP",
@@ -11142,8 +11077,8 @@
       "range_low": 0.004324,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789021584118,
-      "fail_count": 7
+      "added_ms": 1789031443609,
+      "fail_count": 8
     },
     "MNT_USDT_PERP|4H|m_top": {
       "symbol": "MNT_USDT_PERP",
@@ -11457,19 +11392,6 @@
       "added_ms": 1788941029349,
       "fail_count": 0
     },
-    "CHIP_USDT_PERP|4H|m_top": {
-      "symbol": "CHIP_USDT_PERP",
-      "base": "CHIP",
-      "source_interval": "4H",
-      "pattern_type": "m_top",
-      "window": 27,
-      "range_high": 0.062,
-      "range_low": 0.05029,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788941029349,
-      "fail_count": 0
-    },
     "CHIP_USDT_PERP|4H|w_bottom": {
       "symbol": "CHIP_USDT_PERP",
       "base": "CHIP",
@@ -11764,19 +11686,6 @@
       "window": 83,
       "range_high": 0.02453,
       "range_low": 0.01907,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788941029349,
-      "fail_count": 0
-    },
-    "ONG_USDT_PERP|4H|m_top": {
-      "symbol": "ONG_USDT_PERP",
-      "base": "ONG",
-      "source_interval": "4H",
-      "pattern_type": "m_top",
-      "window": 90,
-      "range_high": 0.10821,
-      "range_low": 0.08514,
       "touched_low": null,
       "touched_high": null,
       "added_ms": 1788941029349,
@@ -12273,8 +12182,8 @@
       "range_low": 0.3194,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789003123789,
-      "fail_count": 1
+      "added_ms": 1789031443609,
+      "fail_count": 2
     },
     "LINEA_USDT_PERP|4H|w_bottom": {
       "symbol": "LINEA_USDT_PERP",
@@ -12325,8 +12234,8 @@
       "range_low": 0.0973,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789021584118,
-      "fail_count": 2
+      "added_ms": 1789031443609,
+      "fail_count": 3
     },
     "PI_USDT_PERP|4H|w_bottom": {
       "symbol": "PI_USDT_PERP",
@@ -14239,19 +14148,6 @@
       "added_ms": 1789012904554,
       "fail_count": 0
     },
-    "BILL_USDT_PERP|4H|m_top": {
-      "symbol": "BILL_USDT_PERP",
-      "base": "BILL",
-      "source_interval": "4H",
-      "pattern_type": "m_top",
-      "window": 80,
-      "range_high": 0.02091,
-      "range_low": 0.01476,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1789012904554,
-      "fail_count": 0
-    },
     "BLUR_USDT_PERP|4H|w_bottom": {
       "symbol": "BLUR_USDT_PERP",
       "base": "BLUR",
@@ -14327,8 +14223,8 @@
       "range_low": 0.01412,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789023772179,
-      "fail_count": 2
+      "added_ms": 1789031443609,
+      "fail_count": 3
     },
     "POPCAT_USDT_PERP|4H|m_top": {
       "symbol": "POPCAT_USDT_PERP",
@@ -14613,8 +14509,8 @@
       "range_low": 0.00302,
       "touched_low": null,
       "touched_high": null,
-      "added_ms": 1789028285857,
-      "fail_count": 0
+      "added_ms": 1789031443609,
+      "fail_count": 1
     },
     "RIVER_USDT_PERP|4H|m_top": {
       "symbol": "RIVER_USDT_PERP",
@@ -14695,5 +14591,5 @@
       "fail_count": 0
     }
   },
-  "last_confirmed_count": 0
+  "last_confirmed_count": 8
 }
