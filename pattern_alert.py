@@ -17,9 +17,9 @@ Pionex 合約(PERP)型態訊號監控 + Telegram 通知
 只要偵測到其中一種,就把這個幣種加入"追蹤名單"(記錄區間高低點、來源週期、
 型態種類、加入時間),存進 pattern_state.json,留到下一步驟去驗證。
 
-【第二階段:1H,驗證追蹤名單裡的標的是不是真的突破/跌破】
-只要 1H 有新一根收盤(同樣用"是不是比上次記錄的更新"判斷,不用猜時鐘),
-就只針對追蹤名單裡的幣種抓 1H K線(不會掃全部候選幣種,比較輕量),用下面
+【第二階段:4H,驗證追蹤名單裡的標的是不是真的突破/跌破】
+只要 4H 有新一根收盤(同樣用"是不是比上次記錄的更新"判斷,不用猜時鐘),
+就只針對追蹤名單裡的幣種抓 4H K線(不會掃全部候選幣種,比較輕量),用下面
 規則驗證:
   - 第一根(真正衝出區間的那一根)要帶量:成交量 > breakout_vol_multiplier
     倍的 MAVOL
@@ -58,14 +58,15 @@ TAIPEI_TZ = timezone(timedelta(hours=8))
 
 # 第一階段(找候選標的)只用這兩個週期
 SCAN_INTERVALS = ["4H", "1D"]
-# 第二階段(驗證真正突破/跌破)固定用 1 小時
-CONFIRM_INTERVAL = "60M"
-# 這三個週期都要各自做"是否有新收盤"的判斷
-DUE_CHECK_INTERVALS = ["4H", "1D", "60M"]
+# 第二階段(驗證真正突破/跌破)固定用 4 小時
+CONFIRM_INTERVAL = "4H"
+# 這兩個週期都要各自做"是否有新收盤"的判斷(確認階段跟掃描階段共用 4H 的
+# due 判斷,不需要再額外多判斷一個週期)
+DUE_CHECK_INTERVALS = ["4H", "1D"]
 
 DEFAULT_CONFIG = {
     "min_24h_amount_usdt": 20000,        # 共用:24 小時成交金額(USDT)門檻
-    "mavol_period": 5,                   # 1H 確認突破/跌破用的 MAVOL 期數
+    "mavol_period": 5,                   # 4H 確認突破/跌破用的 MAVOL 期數
     "triangle_convergence_ratio": 0.5,   # 三角收斂:後半段波動範圍需收窄到前半段的比例(越小越嚴格)
     "triangle_min_window": 16,           # 三角收斂最少要幾根K線才算數
     "triangle_min_range_pct": 0.01,      # 三角收斂:整段平均波動至少要佔平均價的比例,避免死盤誤判
@@ -74,7 +75,7 @@ DEFAULT_CONFIG = {
     "triangle_pivot_span": 1,            # 判斷樞紐高/低點時,左右各比較幾根K線
     "max_consolidation_ratio": 0.03,     # 盤整區間:高低價差需 <= 平均收盤價的比例
     "min_consolidation_activity_ratio": 0.15,  # 盤整區間內,每根K線平均高低價差至少要佔整個區間寬度的比例,避免抓到低流動性死盤(只靠零星插針碰到邊界)
-    "breakout_vol_multiplier": 1.5,      # 1H 確認突破/跌破:成交量需超過 MAVOL 的倍數
+    "breakout_vol_multiplier": 1.5,      # 4H 確認突破/跌破:成交量需超過 MAVOL 的倍數
     "lookback_candles": 200,             # 4H/1D 每次往前抓的K線根數上限
     "min_pattern_window": 6,             # 盤整狀態最少要幾根K線才算數
     "double_pattern_min_pivot_gap": 80,          # M頂/W底:整個型態(左右兩個頭/底之間)至少要由這麼多根K線組成(不論4H或日線都一樣),太短就是雜訊
@@ -963,7 +964,8 @@ def main():
 
     session = requests.Session()
 
-    # 分別問 4H / 1D / 1H 各自"最新收盤那一根"是不是比上次記錄的更新
+    # 分別問 4H / 1D 各自"最新收盤那一根"是不是比上次記錄的更新;確認階段
+    # 也是用 4H,直接共用同一個 due 判斷,不需要再另外問一次
     due_flags = {}
     latest_boundary_times = {}
     for interval in DUE_CHECK_INTERVALS:
@@ -976,7 +978,7 @@ def main():
 
     print(
         f"本次執行時間點:{run_start_taipei.strftime('%Y-%m-%d %H:%M:%S')} UTC+8,"
-        f"4H新收盤:{due_flags['4H']},1D新收盤:{due_flags['1D']},1H新收盤:{due_flags['60M']}"
+        f"4H新收盤:{due_flags['4H']},1D新收盤:{due_flags['1D']}"
     )
 
     candidates = None  # 只在真的需要時(4H 或 1D 有新收盤)才去抓候選清單,節省 API
@@ -1055,25 +1057,25 @@ def main():
     if expired_keys:
         print(f"移除 {len(expired_keys)} 個追蹤過久仍未驗證出結果的標的")
 
-    # ---- 第二階段:1H 驗證追蹤名單裡的標的是否真正突破/跌破 ----
+    # ---- 第二階段:4H 驗證追蹤名單裡的標的是否真正突破/跌破 ----
     confirmed_events = []
-    if due_flags["60M"] and watchlist:
-        interval_ms_1h = INTERVAL_MS[CONFIRM_INTERVAL]
-        fetch_limit_1h = config["mavol_period"] + 12
+    if due_flags[CONFIRM_INTERVAL] and watchlist:
+        confirm_interval_ms = INTERVAL_MS[CONFIRM_INTERVAL]
+        fetch_limit_confirm = config["mavol_period"] + 12
         resolved_keys = []
 
         for key, entry in list(watchlist.items()):
             try:
-                klines = get_klines(session, entry["symbol"], CONFIRM_INTERVAL, fetch_limit_1h)
+                klines = get_klines(session, entry["symbol"], CONFIRM_INTERVAL, fetch_limit_confirm)
             except Exception as e:
-                print(f"[警告] 取得 {entry['symbol']} 1H K線失敗:{e}")
+                print(f"[警告] 取得 {entry['symbol']} 4H K線失敗:{e}")
                 continue
             finally:
                 time.sleep(config["request_sleep_sec"])
 
-            closed_1h = get_closed_klines(klines, interval_ms_1h, now_ms)
+            closed_confirm = get_closed_klines(klines, confirm_interval_ms, now_ms)
             direction, pct, close_price = check_breakout_confirmation(
-                closed_1h, entry["range_high"], entry["range_low"],
+                closed_confirm, entry["range_high"], entry["range_low"],
                 config["mavol_period"], config["breakout_vol_multiplier"],
             )
 
@@ -1102,7 +1104,7 @@ def main():
                 if mismatch_reason is not None:
                     action_label = "突破" if direction == "breakout" else "跌破"
                     print(
-                        f"[1H驗證] {entry['base']} 雖然出現{action_label}訊號,但{mismatch_reason},"
+                        f"[4H驗證] {entry['base']} 雖然出現{action_label}訊號,但{mismatch_reason},"
                         f"不算數,視為一次失敗,重新追蹤 {config['watchlist_max_age_hours']} 小時"
                     )
                     entry["fail_count"] = entry.get("fail_count", 0) + 1
@@ -1126,17 +1128,17 @@ def main():
 
             # 沒有確認突破/跌破:檢查是不是"曾經衝出區間、但又折返回區間內"
             # 的失敗嘗試,如果是,失敗次數+1,並重新從現在開始追蹤5天
-            if detect_failed_reversal(closed_1h, entry["range_high"], entry["range_low"]):
+            if detect_failed_reversal(closed_confirm, entry["range_high"], entry["range_low"]):
                 entry["fail_count"] = entry.get("fail_count", 0) + 1
                 entry["added_ms"] = now_ms
                 watchlist[key] = entry
-                print(f"[1H驗證] {entry['base']} 曾嘗試衝出區間但折返失敗,"
+                print(f"[4H驗證] {entry['base']} 曾嘗試衝出區間但折返失敗,"
                       f"累計失敗 {entry['fail_count']} 次,重新追蹤 {config['watchlist_max_age_hours']} 小時")
 
         for k in resolved_keys:
             del watchlist[k]
 
-        print(f"[1H驗證] 本次確認真正突破/跌破:{len(confirmed_events)} 個,追蹤名單剩餘 {len(watchlist)} 個")
+        print(f"[4H驗證] 本次確認真正突破/跌破:{len(confirmed_events)} 個,追蹤名單剩餘 {len(watchlist)} 個")
 
     # ---- 存檔 ----
     for interval in DUE_CHECK_INTERVALS:
@@ -1156,7 +1158,7 @@ def main():
     lines = [
         f"📐 Pionex 型態確認突破快訊 ({now_taipei_str} UTC+8)",
         "流程:4H/日線先抓出三角收斂或盤整中的標的,",
-        "1H連續三根K線(第一根需帶量衝出區間,後兩根不用帶量但要站穩,"
+        "4H連續三根K線(第一根需帶量衝出區間,後兩根不用帶量但要站穩,"
         "且幅度需達最低門檻)才算真正突破/跌破。",
     ]
 
@@ -1169,7 +1171,7 @@ def main():
         fail_note = f"(已{action}失敗{e['fail_count']}次)" if e.get("fail_count", 0) > 0 else ""
         lines.append(
             f"{e['base'].lower()}:{pattern_name}({source_label},{window_label}) "
-            f"1H確認{action} {e['pct']:.2f}%(現價{format_price(e['close'])}){fail_note}"
+            f"4H確認{action} {e['pct']:.2f}%(現價{format_price(e['close'])}){fail_note}"
         )
 
     message = "\n".join(lines)
