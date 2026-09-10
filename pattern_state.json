@@ -2,7 +2,7 @@
   "last_60m_boundary_ms": 1789027200000,
   "last_4h_boundary_ms": 1789012800000,
   "last_1d_boundary_ms": 1788912000000,
-  "last_run_utc": "2026-09-10T09:15:40.101902+00:00",
+  "last_run_utc": "2026-09-10T09:30:01.306660+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -14591,5 +14591,5 @@
       "fail_count": 0
     }
   },
-  "last_confirmed_count": 8
+  "last_confirmed_count": 0
 }
