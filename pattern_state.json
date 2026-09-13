@@ -2,7 +2,7 @@
   "last_60m_boundary_ms": 1789034400000,
   "last_4h_boundary_ms": 1789286400000,
   "last_1d_boundary_ms": 1789171200000,
-  "last_run_utc": "2026-09-13T15:14:03.907320+00:00",
+  "last_run_utc": "2026-09-13T15:30:12.093207+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -83,19 +83,6 @@
       "fail_count": 4,
       "touched_low": true,
       "touched_high": true
-    },
-    "BTC_USDT_PERP|4H|consolidation": {
-      "symbol": "BTC_USDT_PERP",
-      "base": "BTC",
-      "source_interval": "4H",
-      "pattern_type": "consolidation",
-      "window": 11,
-      "range_high": 78029.3,
-      "range_low": 76462.7,
-      "added_ms": 1788880919216,
-      "fail_count": 1,
-      "touched_low": null,
-      "touched_high": null
     },
     "BTR_USDT_PERP|4H|triangle": {
       "symbol": "BTR_USDT_PERP",
@@ -321,19 +308,6 @@
       "range_low": 0.1052,
       "added_ms": 1789012904554,
       "fail_count": 3
-    },
-    "SUSHI_USDT_PERP|4H|triangle": {
-      "symbol": "SUSHI_USDT_PERP",
-      "base": "SUSHI",
-      "source_interval": "4H",
-      "pattern_type": "triangle",
-      "window": 48,
-      "range_high": 0.2267,
-      "range_low": 0.2083,
-      "added_ms": 1788880919216,
-      "fail_count": 1,
-      "touched_low": true,
-      "touched_high": true
     },
     "TRX_USDT_PERP|4H|consolidation": {
       "symbol": "TRX_USDT_PERP",
