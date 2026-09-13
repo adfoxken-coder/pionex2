@@ -2,7 +2,7 @@
   "last_60m_boundary_ms": 1789034400000,
   "last_4h_boundary_ms": 1789272000000,
   "last_1d_boundary_ms": 1789171200000,
-  "last_run_utc": "2026-09-13T10:57:38.568669+00:00",
+  "last_run_utc": "2026-09-13T11:16:52.973866+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -554,19 +554,6 @@
       "range_low": 0.01526,
       "added_ms": 1789142975309,
       "fail_count": 3
-    },
-    "WLD_USDT_PERP|1D|triangle": {
-      "symbol": "WLD_USDT_PERP",
-      "base": "WLD",
-      "source_interval": "1D",
-      "pattern_type": "triangle",
-      "window": 120,
-      "range_high": 0.5054,
-      "range_low": 0.2933,
-      "added_ms": 1788866139038,
-      "fail_count": 2,
-      "touched_low": true,
-      "touched_high": false
     },
     "XRP_USDT_PERP|1D|triangle": {
       "symbol": "XRP_USDT_PERP",
