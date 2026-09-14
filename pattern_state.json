@@ -2,7 +2,7 @@
   "last_60m_boundary_ms": 1789034400000,
   "last_4h_boundary_ms": 1789372800000,
   "last_1d_boundary_ms": 1789257600000,
-  "last_run_utc": "2026-09-14T12:57:17.418992+00:00",
+  "last_run_utc": "2026-09-14T13:21:23.018640+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -1059,19 +1059,6 @@
       "touched_high": null,
       "added_ms": 1789201062026,
       "fail_count": 1
-    },
-    "CLO_USDT_PERP|4H|w_bottom": {
-      "symbol": "CLO_USDT_PERP",
-      "base": "CLO",
-      "source_interval": "4H",
-      "pattern_type": "w_bottom",
-      "window": 106,
-      "range_high": 0.1976,
-      "range_low": 0.0803,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788959498305,
-      "fail_count": 3
     },
     "COOKIE_USDT_PERP|4H|w_bottom": {
       "symbol": "COOKIE_USDT_PERP",
@@ -3374,19 +3361,6 @@
       "added_ms": 1789078427182,
       "fail_count": 2
     },
-    "GRASS_USDT_PERP|1D|m_top": {
-      "symbol": "GRASS_USDT_PERP",
-      "base": "GRASS",
-      "source_interval": "1D",
-      "pattern_type": "m_top",
-      "window": 98,
-      "range_high": 0.5386,
-      "range_low": 0.2629,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788959498305,
-      "fail_count": 2
-    },
     "HAEDAL_USDT_PERP|1D|m_top": {
       "symbol": "HAEDAL_USDT_PERP",
       "base": "HAEDAL",
@@ -4543,19 +4517,6 @@
       "touched_high": false,
       "added_ms": 1789100385644,
       "fail_count": 5
-    },
-    "GWEI_USDT_PERP|4H|m_top": {
-      "symbol": "GWEI_USDT_PERP",
-      "base": "GWEI",
-      "source_interval": "4H",
-      "pattern_type": "m_top",
-      "window": 101,
-      "range_high": 0.02369,
-      "range_low": 0.02075,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788959498305,
-      "fail_count": 1
     },
     "HOLO_USDT_PERP|4H|m_top": {
       "symbol": "HOLO_USDT_PERP",
