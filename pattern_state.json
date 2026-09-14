@@ -2,7 +2,7 @@
   "last_60m_boundary_ms": 1789034400000,
   "last_4h_boundary_ms": 1789401600000,
   "last_1d_boundary_ms": 1789257600000,
-  "last_run_utc": "2026-09-14T23:01:11.812899+00:00",
+  "last_run_utc": "2026-09-14T23:19:18.510679+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -606,19 +606,6 @@
       "touched_high": null,
       "added_ms": 1789424123463,
       "fail_count": 5
-    },
-    "ALGO_USDT_PERP|4H|w_bottom": {
-      "symbol": "ALGO_USDT_PERP",
-      "base": "ALGO",
-      "source_interval": "4H",
-      "pattern_type": "w_bottom",
-      "window": 87,
-      "range_high": 0.1031,
-      "range_low": 0.0855,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788995748000,
-      "fail_count": 4
     },
     "ALLO_USDT_PERP|4H|w_bottom": {
       "symbol": "ALLO_USDT_PERP",
@@ -1347,19 +1334,6 @@
       "touched_high": null,
       "added_ms": 1789337664324,
       "fail_count": 5
-    },
-    "HUMA_USDT_PERP|4H|m_top": {
-      "symbol": "HUMA_USDT_PERP",
-      "base": "HUMA",
-      "source_interval": "4H",
-      "pattern_type": "m_top",
-      "window": 97,
-      "range_high": 0.028176,
-      "range_low": 0.018739,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788995748000,
-      "fail_count": 2
     },
     "HUMA_USDT_PERP|4H|w_bottom": {
       "symbol": "HUMA_USDT_PERP",
@@ -2804,19 +2778,6 @@
       "added_ms": 1789272369093,
       "fail_count": 8
     },
-    "APT_USDT_PERP|1D|m_top": {
-      "symbol": "APT_USDT_PERP",
-      "base": "APT",
-      "source_interval": "1D",
-      "pattern_type": "m_top",
-      "window": 110,
-      "range_high": 1.0019,
-      "range_low": 0.5077,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788995748000,
-      "fail_count": 7
-    },
     "ASTR_USDT_PERP|1D|m_top": {
       "symbol": "ASTR_USDT_PERP",
       "base": "ASTR",
@@ -2971,19 +2932,6 @@
       "touched_low": null,
       "touched_high": null,
       "added_ms": 1789185758010,
-      "fail_count": 4
-    },
-    "CHZ_USDT_PERP|1D|m_top": {
-      "symbol": "CHZ_USDT_PERP",
-      "base": "CHZ",
-      "source_interval": "1D",
-      "pattern_type": "m_top",
-      "window": 99,
-      "range_high": 0.03743,
-      "range_low": 0.01164,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788995748000,
       "fail_count": 4
     },
     "CLO_USDT_PERP|1D|w_bottom": {
@@ -3207,19 +3155,6 @@
       "added_ms": 1789272369093,
       "fail_count": 10
     },
-    "IOTA_USDT_PERP|1D|m_top": {
-      "symbol": "IOTA_USDT_PERP",
-      "base": "IOTA",
-      "source_interval": "1D",
-      "pattern_type": "m_top",
-      "window": 86,
-      "range_high": 0.0515,
-      "range_low": 0.031,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788995748000,
-      "fail_count": 1
-    },
     "JASMY_USDT_PERP|1D|w_bottom": {
       "symbol": "JASMY_USDT_PERP",
       "base": "JASMY",
@@ -3310,19 +3245,6 @@
       "touched_high": null,
       "added_ms": 1788999781408,
       "fail_count": 1
-    },
-    "MEGA_USDT_PERP|1D|m_top": {
-      "symbol": "MEGA_USDT_PERP",
-      "base": "MEGA",
-      "source_interval": "1D",
-      "pattern_type": "m_top",
-      "window": 151,
-      "range_high": 0.13348,
-      "range_low": 0.03012,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788995748000,
-      "fail_count": 4
     },
     "METIS_USDT_PERP|1D|m_top": {
       "symbol": "METIS_USDT_PERP",
@@ -3688,19 +3610,6 @@
       "added_ms": 1789345456088,
       "fail_count": 8
     },
-    "WAL_USDT_PERP|1D|m_top": {
-      "symbol": "WAL_USDT_PERP",
-      "base": "WAL",
-      "source_interval": "1D",
-      "pattern_type": "m_top",
-      "window": 95,
-      "range_high": 0.0669,
-      "range_low": 0.02,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788995748000,
-      "fail_count": 4
-    },
     "WLFI_USDT_PERP|1D|triangle": {
       "symbol": "WLFI_USDT_PERP",
       "base": "WLFI",
@@ -3791,19 +3700,6 @@
       "touched_high": null,
       "added_ms": 1789359148200,
       "fail_count": 6
-    },
-    "XVG_USDT_PERP|1D|w_bottom": {
-      "symbol": "XVG_USDT_PERP",
-      "base": "XVG",
-      "source_interval": "1D",
-      "pattern_type": "w_bottom",
-      "window": 81,
-      "range_high": 0.002988,
-      "range_low": 0.002344,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788995748000,
-      "fail_count": 3
     },
     "YB_USDT_PERP|1D|w_bottom": {
       "symbol": "YB_USDT_PERP",
@@ -3972,19 +3868,6 @@
       "touched_low": null,
       "touched_high": null,
       "added_ms": 1789023772179,
-      "fail_count": 1
-    },
-    "COTI_USDT_PERP|4H|w_bottom": {
-      "symbol": "COTI_USDT_PERP",
-      "base": "COTI",
-      "source_interval": "4H",
-      "pattern_type": "w_bottom",
-      "window": 108,
-      "range_high": 0.02201,
-      "range_low": 0.01215,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1788995748000,
       "fail_count": 1
     },
     "HEMI_USDT_PERP|4H|w_bottom": {
