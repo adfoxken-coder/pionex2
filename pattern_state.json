@@ -2,7 +2,7 @@
   "last_60m_boundary_ms": 1789034400000,
   "last_4h_boundary_ms": 1789416000000,
   "last_1d_boundary_ms": 1789344000000,
-  "last_run_utc": "2026-09-15T01:04:12.047719+00:00",
+  "last_run_utc": "2026-09-15T01:25:39.543234+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -839,19 +839,6 @@
       "touched_low": null,
       "touched_high": null,
       "added_ms": 1789142975309,
-      "fail_count": 2
-    },
-    "BLESS_USDT_PERP|4H|w_bottom": {
-      "symbol": "BLESS_USDT_PERP",
-      "base": "BLESS",
-      "source_interval": "4H",
-      "pattern_type": "w_bottom",
-      "window": 152,
-      "range_high": 0.013363,
-      "range_low": 0.00709,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1789003123789,
       "fail_count": 2
     },
     "BONK_USDT_PERP|4H|w_bottom": {
@@ -1712,19 +1699,6 @@
       "added_ms": 1789085959731,
       "fail_count": 6
     },
-    "NOT_USDT_PERP|4H|w_bottom": {
-      "symbol": "NOT_USDT_PERP",
-      "base": "NOT",
-      "source_interval": "4H",
-      "pattern_type": "w_bottom",
-      "window": 89,
-      "range_high": 0.0005169,
-      "range_low": 0.0004014,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1789003123789,
-      "fail_count": 1
-    },
     "ONDO_USDT_PERP|4H|w_bottom": {
       "symbol": "ONDO_USDT_PERP",
       "base": "ONDO",
@@ -1893,19 +1867,6 @@
       "touched_high": null,
       "added_ms": 1789432031401,
       "fail_count": 5
-    },
-    "POPCAT_USDT_PERP|4H|w_bottom": {
-      "symbol": "POPCAT_USDT_PERP",
-      "base": "POPCAT",
-      "source_interval": "4H",
-      "pattern_type": "w_bottom",
-      "window": 137,
-      "range_high": 0.066,
-      "range_low": 0.0404,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1789003123789,
-      "fail_count": 1
     },
     "POWER_USDT_PERP|4H|m_top": {
       "symbol": "POWER_USDT_PERP",
@@ -2192,19 +2153,6 @@
       "touched_high": null,
       "added_ms": 1789302093934,
       "fail_count": 3
-    },
-    "TRUMP_USDT_PERP|4H|w_bottom": {
-      "symbol": "TRUMP_USDT_PERP",
-      "base": "TRUMP",
-      "source_interval": "4H",
-      "pattern_type": "w_bottom",
-      "window": 156,
-      "range_high": 3.672,
-      "range_low": 1.389,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1789003123789,
-      "fail_count": 1
     },
     "TST_USDT_PERP|4H|w_bottom": {
       "symbol": "TST_USDT_PERP",
