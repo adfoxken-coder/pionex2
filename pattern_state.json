@@ -2,7 +2,7 @@
   "last_60m_boundary_ms": 1789034400000,
   "last_4h_boundary_ms": 1789430400000,
   "last_1d_boundary_ms": 1789344000000,
-  "last_run_utc": "2026-09-15T06:25:01.013925+00:00",
+  "last_run_utc": "2026-09-15T06:47:41.801758+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -870,19 +870,6 @@
       "touched_high": null,
       "added_ms": 1789100385644,
       "fail_count": 1
-    },
-    "BTR_USDT_PERP|4H|m_top": {
-      "symbol": "BTR_USDT_PERP",
-      "base": "BTR",
-      "source_interval": "4H",
-      "pattern_type": "m_top",
-      "window": 87,
-      "range_high": 0.17714,
-      "range_low": 0.04243,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1789021584118,
-      "fail_count": 3
     },
     "BTW_USDT_PERP|4H|m_top": {
       "symbol": "BTW_USDT_PERP",
@@ -2390,19 +2377,6 @@
       "touched_low": null,
       "touched_high": null,
       "added_ms": 1789359148200,
-      "fail_count": 2
-    },
-    "NEAR_USDT_PERP|4H|w_bottom": {
-      "symbol": "NEAR_USDT_PERP",
-      "base": "NEAR",
-      "source_interval": "4H",
-      "pattern_type": "w_bottom",
-      "window": 85,
-      "range_high": 2.726,
-      "range_low": 1.789,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1789021584118,
       "fail_count": 2
     },
     "OPEN_USDT_PERP|4H|w_bottom": {
@@ -3925,19 +3899,6 @@
       "touched_high": true,
       "added_ms": 1789172356907,
       "fail_count": 3
-    },
-    "DODO_USDT_PERP|4H|m_top": {
-      "symbol": "DODO_USDT_PERP",
-      "base": "DODO",
-      "source_interval": "4H",
-      "pattern_type": "m_top",
-      "window": 86,
-      "range_high": 0.020137,
-      "range_low": 0.015914,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1789021584118,
-      "fail_count": 2
     },
     "IMX_USDT_PERP|4H|m_top": {
       "symbol": "IMX_USDT_PERP",
