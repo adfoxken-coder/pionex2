@@ -2,7 +2,7 @@
   "last_60m_boundary_ms": 1789034400000,
   "last_4h_boundary_ms": 1789444800000,
   "last_1d_boundary_ms": 1789344000000,
-  "last_run_utc": "2026-09-15T11:10:59.297895+00:00",
+  "last_run_utc": "2026-09-15T11:28:54.308627+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -766,19 +766,6 @@
       "touched_high": null,
       "added_ms": 1789142975309,
       "fail_count": 2
-    },
-    "BONK_USDT_PERP|4H|w_bottom": {
-      "symbol": "BONK_USDT_PERP",
-      "base": "BONK",
-      "source_interval": "4H",
-      "pattern_type": "w_bottom",
-      "window": 157,
-      "range_high": 3.673e-06,
-      "range_low": 2.285e-06,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1789038689213,
-      "fail_count": 3
     },
     "BRETT_USDT_PERP|4H|w_bottom": {
       "symbol": "BRETT_USDT_PERP",
