@@ -2,7 +2,7 @@
   "last_60m_boundary_ms": 1789034400000,
   "last_4h_boundary_ms": 1789545600000,
   "last_1d_boundary_ms": 1789430400000,
-  "last_run_utc": "2026-09-16T12:29:54.420644+00:00",
+  "last_run_utc": "2026-09-16T12:45:26.520367+00:00",
   "last_run_intervals": [],
   "last_match_count": 0,
   "watchlist": {
@@ -391,19 +391,6 @@
       "fail_count": 2,
       "touched_low": false,
       "touched_high": true
-    },
-    "ACE_USDT_PERP|4H|w_bottom": {
-      "symbol": "ACE_USDT_PERP",
-      "base": "ACE",
-      "source_interval": "4H",
-      "pattern_type": "w_bottom",
-      "window": 190,
-      "range_high": 0.3784,
-      "range_low": 0.1037,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1789129501813,
-      "fail_count": 3
     },
     "ADA_USDT_PERP|4H|w_bottom": {
       "symbol": "ADA_USDT_PERP",
@@ -3798,19 +3785,6 @@
       "added_ms": 1789445534006,
       "fail_count": 2
     },
-    "IOST_USDT_PERP|4H|w_bottom": {
-      "symbol": "IOST_USDT_PERP",
-      "base": "IOST",
-      "source_interval": "4H",
-      "pattern_type": "w_bottom",
-      "window": 87,
-      "range_high": 0.002217,
-      "range_low": 0.000576,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1789129501813,
-      "fail_count": 0
-    },
     "KAT_USDT_PERP|4H|w_bottom": {
       "symbol": "KAT_USDT_PERP",
       "base": "KAT",
@@ -3836,32 +3810,6 @@
       "touched_high": null,
       "added_ms": 1789387883095,
       "fail_count": 3
-    },
-    "LIT_USDT_PERP|4H|w_bottom": {
-      "symbol": "LIT_USDT_PERP",
-      "base": "LIGHTER",
-      "source_interval": "4H",
-      "pattern_type": "w_bottom",
-      "window": 84,
-      "range_high": 5.312,
-      "range_low": 3.381,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1789129501813,
-      "fail_count": 0
-    },
-    "NEO_USDT_PERP|4H|w_bottom": {
-      "symbol": "NEO_USDT_PERP",
-      "base": "NEO",
-      "source_interval": "4H",
-      "pattern_type": "w_bottom",
-      "window": 80,
-      "range_high": 2.354,
-      "range_low": 1.995,
-      "touched_low": null,
-      "touched_high": null,
-      "added_ms": 1789129501813,
-      "fail_count": 0
     },
     "TRUTH_USDT_PERP|4H|w_bottom": {
       "symbol": "TRUTH_USDT_PERP",
@@ -14550,5 +14498,5 @@
       "fail_count": 0
     }
   },
-  "last_confirmed_count": 4
+  "last_confirmed_count": 0
 }
